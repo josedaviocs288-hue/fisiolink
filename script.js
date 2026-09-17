@@ -1,126 +1,295 @@
-const exercises = [
-  {id:1,title:'Mobilidade de ombro',region:'Ombro',level:'Leve',minutes:8,icon:'🙆',desc:'Movimentos suaves para lembrar a mobilidade orientada do ombro.',steps:['Sente-se ou fique em pé de forma confortável.','Realize o movimento somente dentro do limite orientado pelo profissional.','Mantenha respiração tranquila e evite compensações.','Interrompa se surgir piora importante da dor, tontura ou mal-estar.']},
-  {id:2,title:'Alongamento lombar leve',region:'Coluna',level:'Leve',minutes:7,icon:'🧘',desc:'Sequência simples de mobilidade e alongamento para a região lombar.',steps:['Escolha uma superfície estável.','Faça o movimento de forma lenta.','Não force amplitude nem permaneça em posição dolorosa.','Use apenas se esse exercício fizer parte da sua orientação.']},
-  {id:3,title:'Fortalecimento de joelho',region:'Joelho',level:'Moderado',minutes:12,icon:'🦵',desc:'Exercício demonstrativo de controle e fortalecimento do joelho.',steps:['Posicione-se próximo de um apoio seguro.','Mantenha o joelho alinhado conforme orientação recebida.','Faça as repetições sem pressa.','Pare em caso de dor intensa ou instabilidade.']},
-  {id:4,title:'Mobilidade de quadril',region:'Quadril',level:'Leve',minutes:9,icon:'🚶',desc:'Rotina curta de mobilidade para quadril e região pélvica.',steps:['Comece com movimentos pequenos.','Mantenha tronco estável.','Aumente amplitude apenas se isso tiver sido orientado.','Registre como você se sentiu após a sessão.']},
-  {id:5,title:'Controle de tornozelo',region:'Tornozelo',level:'Moderado',minutes:10,icon:'🦶',desc:'Prática demonstrativa de controle do tornozelo e apoio.',steps:['Use apoio próximo se houver risco de desequilíbrio.','Realize os movimentos devagar.','Evite treinar sobre superfície escorregadia.','Siga o número de repetições definido pelo profissional.']},
-  {id:6,title:'Postura e mobilidade cervical',region:'Coluna',level:'Leve',minutes:6,icon:'🧍',desc:'Movimentos suaves para rotina de postura e mobilidade cervical.',steps:['Sente-se com apoio confortável.','Movimente o pescoço lentamente.','Não force rotação ou inclinação.','Procure avaliação se houver sintomas persistentes ou piora importante.']}
-];
+(() => {
+  const cfg = window.FISIOLINK_CONFIG || {};
+  const configured = cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY && !cfg.SUPABASE_URL.includes('COLE_AQUI') && !cfg.SUPABASE_ANON_KEY.includes('COLE_AQUI');
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+  const toastEl = $('#toast');
+  const toast = (msg, error=false) => { toastEl.textContent = msg; toastEl.classList.toggle('error', error); toastEl.classList.add('show'); clearTimeout(window.__toast); window.__toast=setTimeout(()=>toastEl.classList.remove('show'),3200); };
 
-const professionals = [
-  {name:'Dra. Marina Alves',specialty:'Ortopedia e reabilitação',type:'Fisioterapeuta',city:'Centro',distance:1.2,rating:'4,9',initials:'MA'},
-  {name:'Clínica Movimento+',specialty:'Fisioterapia geral e idosos',type:'Clínica',city:'Centro',distance:2.4,rating:'4,8',initials:'M+'},
-  {name:'Dr. Rafael Lima',specialty:'Esportiva e prevenção',type:'Fisioterapeuta',city:'Bairro Universitário',distance:3.1,rating:'4,9',initials:'RL'},
-  {name:'Espaço Reabilitar',specialty:'Dor, mobilidade e pós-operatório',type:'Clínica',city:'Avenida Central',distance:4.3,rating:'4,7',initials:'ER'},
-  {name:'Dra. Camila Rocha',specialty:'Geriatria e equilíbrio',type:'Fisioterapeuta',city:'Centro',distance:5.1,rating:'5,0',initials:'CR'},
-  {name:'FisioViva',specialty:'Ortopedia e pilates clínico',type:'Clínica',city:'Zona Sul',distance:6.0,rating:'4,8',initials:'FV'}
-];
+  let sb = null;
+  let session = null;
+  let profile = null;
+  let videos = [];
+  let selectedVideo = null;
 
-const tips = {
-  pausas:{title:'Pausas no dia a dia',text:'Tente alternar posições durante tarefas prolongadas. Pequenas pausas podem ajudar no conforto, mas não existe uma postura única ideal para todas as pessoas.'},
-  retorno:{title:'Retorno gradual à atividade',text:'A progressão de esforço costuma ser feita de maneira gradual. Se você está retornando após lesão ou afastamento, siga a orientação do profissional que acompanha seu caso.'},
-  recuperacao:{title:'Recuperação também importa',text:'Sono adequado, alimentação e descanso fazem parte do cuidado geral com a saúde. O FisioLink registra rotina, mas não substitui avaliação clínica.'},
-  ajuda:{title:'Quando procurar avaliação',text:'Dor persistente, piora importante, perda de força, quedas, limitação crescente ou sintomas que preocupam você merecem avaliação profissional. Em situações urgentes, procure atendimento de emergência.'}
-};
+  if (!configured) {
+    $('#setupWarning').classList.remove('hidden');
+  } else {
+    sb = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    });
+  }
 
-let currentProfile = null;
-let currentProfessional = null;
+  const authDialog = $('#authDialog');
+  const videoDialog = $('#videoDialog');
 
-const $ = (s,root=document)=>root.querySelector(s);
-const $$ = (s,root=document)=>[...root.querySelectorAll(s)];
-const toast = msg => { const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(window.toastTimer); window.toastTimer=setTimeout(()=>t.classList.remove('show'),2500); };
+  function switchAuth(mode) {
+    $('#loginPanel').classList.toggle('hidden', mode !== 'login');
+    $('#registerPanel').classList.toggle('hidden', mode !== 'register');
+  }
 
-function openModal(id){ const el=$(id); if(el && !el.open) el.showModal(); }
-function closeModals(){ $$('dialog[open]').forEach(d=>d.close()); }
+  function showPage(name) {
+    $$('.page').forEach(p => p.classList.toggle('active-page', p.id === `page-${name}`));
+    $$('.page').forEach(p => p.style.display = p.classList.contains('active-page') ? 'block' : 'none');
+    $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.page === name));
+    if (name === 'progresso') loadProgress();
+    if (name === 'meus-videos') loadMyVideos();
+  }
 
-function showView(id){
-  $$('.view').forEach(v=>v.classList.toggle('active-view',v.id===id));
-  $$('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===id));
-  window.scrollTo({top:0,behavior:'smooth'});
-}
+  function applyRoleUI() {
+    const isPatient = profile?.role === 'patient';
+    $$('.patient-only').forEach(el => el.classList.toggle('hidden', !isPatient));
+    $$('.therapist-only').forEach(el => el.classList.toggle('hidden', isPatient));
+    $('#userBadge').textContent = `${profile?.name || 'Usuário'} · ${isPatient ? 'Paciente' : 'Fisioterapeuta'}`;
+    showPage('videos');
+  }
 
-function renderExercises(){
-  const region=$('#filtroRegiao').value, level=$('#filtroNivel').value;
-  const list=exercises.filter(e=>(region==='todos'||e.region===region)&&(level==='todos'||e.level===level));
-  $('#exerciseGrid').innerHTML=list.map(e=>`<article class="exercise-card"><div class="exercise-cover">${e.icon}</div><div class="exercise-body"><div class="chips"><span class="chip">${e.region}</span><span class="chip">${e.level}</span></div><h3>${e.title}</h3><p>${e.desc}</p><div class="card-row"><small>⏱ ${e.minutes} min</small><button class="primary" data-exercise="${e.id}">Abrir</button></div></div></article>`).join('');
-}
+  async function loadProfile() {
+    if (!session?.user) return;
+    const { data, error } = await sb.from('profiles').select('id,name,role').eq('id', session.user.id).single();
+    if (error) throw error;
+    profile = data;
+  }
 
-function openExercise(id){
-  const e=exercises.find(x=>x.id===Number(id));
-  if(!e)return;
-  $('#exerciseDetail').innerHTML=`<div class="exercise-detail-layout"><div class="exercise-video">${e.icon}</div><div><span class="eyebrow">${e.region} · ${e.level}</span><h2>${e.title}</h2><p>${e.desc}</p><ol class="steps">${e.steps.map(s=>`<li>${s}</li>`).join('')}</ol><div class="alert">Conteúdo demonstrativo. Faça exercícios terapêuticos somente quando orientados para o seu caso.</div><div style="display:flex;gap:10px;margin-top:16px"><button class="primary" id="completeExercise">Marcar como concluído</button><button class="secondary" data-close>Fechar</button></div></div></div>`;
-  openModal('#exerciseModal');
-  $('#completeExercise').onclick=()=>{ addSession(e.title,e.minutes,3,'Ok'); closeModals(); toast('Sessão registrada no seu progresso.'); };
-  $$('[data-close]',$('#exerciseModal')).forEach(b=>b.onclick=closeModals);
-}
+  async function setLoggedInState() {
+    $('#landing').classList.add('hidden');
+    $('#app').classList.remove('hidden');
+    $('#appNav').classList.remove('hidden');
+    $('#logoutBtn').classList.remove('hidden');
+    $('#userBadge').classList.remove('hidden');
+    applyRoleUI();
+    await loadVideos();
+  }
 
-function defaultHistory(){ return [
-  {exercise:'Mobilidade de ombro',minutes:8,pain:3,feeling:'Ok',date:'Hoje'},
-  {exercise:'Alongamento lombar leve',minutes:7,pain:2,feeling:'Fácil',date:'Ontem'},
-  {exercise:'Controle de tornozelo',minutes:10,pain:4,feeling:'Ok',date:'Há 2 dias'}
-];}
-function getHistory(){ try{return JSON.parse(localStorage.getItem('fisiolink_history'))||defaultHistory()}catch{return defaultHistory()} }
-function saveHistory(h){ localStorage.setItem('fisiolink_history',JSON.stringify(h)); }
-function addSession(exercise,minutes,pain,feeling){ const h=getHistory(); h.unshift({exercise,minutes:Number(minutes),pain:Number(pain),feeling,date:'Agora'}); saveHistory(h.slice(0,20)); renderProgress(); }
+  function setLoggedOutState() {
+    session = null; profile = null; videos = [];
+    $('#landing').classList.remove('hidden');
+    $('#app').classList.add('hidden');
+    $('#appNav').classList.add('hidden');
+    $('#logoutBtn').classList.add('hidden');
+    $('#userBadge').classList.add('hidden');
+  }
 
-function renderProgress(){
-  const h=getHistory();
-  const total=h.length+5;
-  const minutes=h.reduce((s,x)=>s+(Number(x.minutes)||0),0)+61;
-  const pains=h.filter(x=>Number.isFinite(Number(x.pain))).map(x=>Number(x.pain));
-  const avg=pains.length?(pains.reduce((a,b)=>a+b,0)/pains.length).toFixed(1).replace('.',','):'—';
-  $('#totalSessions').textContent=total;
-  $('#totalMinutes').textContent=minutes;
-  $('#avgPain').textContent=`${avg}/10`;
-  const weekly=Math.min(4,Math.max(1,h.filter(x=>['Hoje','Ontem','Agora','Há 2 dias'].includes(x.date)).length));
-  $('#weekLabel').textContent=`${weekly}/4 sessões`;
-  $('#weekBar').style.width=`${weekly/4*100}%`;
-  const labels=['S','T','Q','Q','S','S','D'];
-  $('#weekDays').innerHTML=labels.map((d,i)=>`<div class="day ${i<weekly?'done':''}"><i>${i<weekly?'✓':i+1}</i><span>${d}</span></div>`).join('');
-  $('#historyList').innerHTML=h.length?h.slice(0,6).map(x=>`<div class="history-item"><div><b>${x.exercise}</b><small>${x.date} · ${x.minutes} min · dor ${x.pain}/10</small></div><span class="chip">${x.feeling}</span></div>`).join(''):'<p style="color:var(--muted)">Nenhuma sessão registrada ainda.</p>';
-}
+  async function bootstrap() {
+    if (!configured) return;
+    const { data } = await sb.auth.getSession();
+    session = data.session;
+    if (session) {
+      try { await loadProfile(); await setLoggedInState(); }
+      catch (e) { console.error(e); toast('Não foi possível carregar seu perfil. Rode o SQL de configuração do projeto.', true); }
+    }
+    sb.auth.onAuthStateChange(async (_event, newSession) => {
+      session = newSession;
+      if (newSession) {
+        try { await loadProfile(); await setLoggedInState(); }
+        catch (e) { console.error(e); toast('Erro ao carregar perfil.', true); }
+      } else setLoggedOutState();
+    });
+  }
 
-function renderProfessionals(list=professionals){
-  $('#professionalGrid').innerHTML=list.map((p,i)=>`<article class="professional-card"><div class="professional-top"><div class="professional-avatar">${p.initials}</div><div><b>${p.name}</b><div class="verified">✓ Perfil demonstrativo verificado</div><small>${p.type}</small></div></div><p>${p.specialty}</p><div class="professional-meta"><span>⭐ ${p.rating}</span><span>📍 ${p.distance.toFixed(1).replace('.',',')} km</span><span>🏙 ${p.city}</span><span>💬 Responde rápido</span></div><button class="primary full" data-book="${i}">Solicitar atendimento</button></article>`).join('');
-}
+  async function signedUrl(path) {
+    const { data, error } = await sb.storage.from('fisiolink-videos').createSignedUrl(path, 3600);
+    if (error) return null;
+    return data.signedUrl;
+  }
 
-function handleLocation(){
-  if(!navigator.geolocation){toast('Seu navegador não oferece geolocalização.');return;}
-  toast('Solicitando sua localização…');
-  navigator.geolocation.getCurrentPosition(()=>{
-    const sorted=[...professionals].sort((a,b)=>a.distance-b.distance);
-    renderProfessionals(sorted);
-    toast('Profissionais ordenados por proximidade demonstrativa.');
-  },()=>toast('Localização não autorizada. Você pode continuar usando a busca.'));
-}
+  async function loadVideos() {
+    if (!sb || !session) return;
+    const { data, error } = await sb.from('videos').select('*').eq('active', true).order('created_at', { ascending:false });
+    if (error) { toast('Erro ao carregar vídeos.', true); return; }
+    videos = await Promise.all((data || []).map(async v => ({...v, url: await signedUrl(v.storage_path)})));
+    populateCategories();
+    renderVideos();
+  }
 
-function initAuth(){
-  $('#btnEntrar').onclick=()=>openModal('#authModal');
-  $$('[data-open="cadastro"]').forEach(b=>b.onclick=()=>openModal('#cadastroModal'));
-  $$('[data-profile]').forEach(b=>b.onclick=()=>{currentProfile=b.dataset.profile;$('#authChoice').classList.add('hidden');$('#loginForm').classList.remove('hidden');$('#loginTitle').textContent=currentProfile==='paciente'?'Entrar como paciente':'Entrar como profissional';});
-  $('#backAuth').onclick=()=>{$('#loginForm').classList.add('hidden');$('#authChoice').classList.remove('hidden')};
-  $('#loginForm').onsubmit=e=>{e.preventDefault(); localStorage.setItem('fisiolink_user',JSON.stringify({email:$('#loginEmail').value,profile:currentProfile})); closeModals(); $('#btnEntrar').textContent=currentProfile==='paciente'?'Minha conta':'Painel profissional'; toast('Login demonstrativo realizado.'); if(currentProfile==='paciente')showView('progresso'); else toast('Painel profissional demonstrativo ativado.');};
-  $('#cadastroForm').onsubmit=e=>{e.preventDefault(); const u={name:$('#cadNome').value,email:$('#cadEmail').value,profile:$('#cadPerfil').value,city:$('#cadCidade').value}; localStorage.setItem('fisiolink_user',JSON.stringify(u)); closeModals(); $('#btnEntrar').textContent='Minha conta'; toast('Conta demonstrativa criada e salva neste navegador.');};
-}
+  function populateCategories() {
+    const current = $('#categoryFilter').value;
+    const cats = [...new Set(videos.map(v => v.category).filter(Boolean))].sort();
+    $('#categoryFilter').innerHTML = '<option value="">Todas as categorias</option>' + cats.map(c => `<option>${escapeHtml(c)}</option>`).join('');
+    $('#categoryFilter').value = cats.includes(current) ? current : '';
+  }
 
-function init(){
-  renderExercises(); renderProgress(); renderProfessionals(); initAuth();
-  $$('.nav-btn,[data-view]').forEach(b=>b.addEventListener('click',()=>b.dataset.view&&showView(b.dataset.view)));
-  $('#filtroRegiao').onchange=renderExercises; $('#filtroNivel').onchange=renderExercises;
-  $('#exerciseGrid').onclick=e=>{const b=e.target.closest('[data-exercise]'); if(b)openExercise(b.dataset.exercise)};
-  $('#btnNovaSessao').onclick=()=>openModal('#sessionModal');
-  $('#sessionExercise').innerHTML=exercises.map(e=>`<option>${e.title}</option>`).join('');
-  $('#sessionForm').onsubmit=e=>{e.preventDefault();addSession($('#sessionExercise').value,$('#sessionMinutes').value,$('#sessionPain').value,$('#sessionFeeling').value);closeModals();toast('Sessão salva com sucesso.');};
-  $('#btnLimparHistorico').onclick=()=>{localStorage.removeItem('fisiolink_history');renderProgress();toast('Histórico demonstrativo restaurado.');};
-  $('#professionalSearch').oninput=e=>{const q=e.target.value.toLowerCase();renderProfessionals(professionals.filter(p=>`${p.name} ${p.specialty} ${p.type}`.toLowerCase().includes(q)));};
-  $('#btnLocalizacao').onclick=handleLocation;
-  $('#professionalGrid').onclick=e=>{const b=e.target.closest('[data-book]'); if(!b)return; currentProfessional=professionals[Number(b.dataset.book)]||professionals[0]; $('#bookingTitle').textContent=`Atendimento com ${currentProfessional.name}`; const d=new Date();d.setDate(d.getDate()+1);$('#bookingDate').min=d.toISOString().split('T')[0];openModal('#bookingModal');};
-  $('#bookingForm').onsubmit=e=>{e.preventDefault();const req={professional:currentProfessional?.name||'Profissional',name:$('#bookingName').value,phone:$('#bookingPhone').value,date:$('#bookingDate').value,mode:$('#bookingMode').value};localStorage.setItem('fisiolink_last_booking',JSON.stringify(req));closeModals();toast('Solicitação registrada no protótipo.');e.target.reset();};
-  $$('[data-tip]').forEach(b=>b.onclick=()=>{const t=tips[b.dataset.tip];$('#tipContent').innerHTML=`<span class="eyebrow">Informação geral</span><h2>${t.title}</h2><p>${t.text}</p><div class="alert">Este conteúdo é educativo e não substitui avaliação individual.</div>`;openModal('#tipModal')});
-  $$('[data-close]').forEach(b=>b.onclick=closeModals);
-  $$('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close()}));
-  $('#btnAcessibilidade').onclick=()=>{document.body.classList.toggle('large-text');toast(document.body.classList.contains('large-text')?'Texto ampliado.':'Tamanho de texto normal.');};
-  const saved=localStorage.getItem('fisiolink_user'); if(saved) $('#btnEntrar').textContent='Minha conta';
-}
+  function renderVideos() {
+    const q = ($('#videoSearch').value || '').trim().toLowerCase();
+    const cat = $('#categoryFilter').value;
+    const list = videos.filter(v => (!cat || v.category === cat) && (!q || `${v.title} ${v.description||''} ${v.category||''} ${v.body_area||''} ${v.therapist_name||''}`.toLowerCase().includes(q)));
+    $('#videoEmpty').classList.toggle('hidden', list.length > 0);
+    $('#videoGrid').innerHTML = list.map(v => `
+      <article class="video-card">
+        <div class="video-thumb" data-open-video="${v.id}">▶</div>
+        <div class="video-body">
+          <div class="chips"><span class="chip">${escapeHtml(v.category || 'Exercício')}</span><span class="chip">${escapeHtml(v.level || 'Leve')}</span></div>
+          <h3>${escapeHtml(v.title)}</h3>
+          <p>${escapeHtml((v.description || 'Sem descrição.').slice(0,130))}</p>
+          <div class="video-meta"><span>${v.duration_minutes || '—'} min</span><span>${escapeHtml(v.therapist_name || 'Fisioterapeuta')}</span></div>
+          <button class="btn primary full" data-open-video="${v.id}">Assistir</button>
+        </div>
+      </article>`).join('');
+  }
 
-document.addEventListener('DOMContentLoaded',init);
+  async function openVideo(id) {
+    const v = videos.find(x => x.id === id);
+    if (!v) return;
+    selectedVideo = v;
+    $('#videoPlayer').src = v.url || '';
+    $('#videoDetailTitle').textContent = v.title;
+    $('#videoDetailDescription').textContent = v.description || 'Sem descrição.';
+    $('#videoDetailMeta').textContent = `${v.therapist_name || 'Fisioterapeuta'} · ${v.duration_minutes || '—'} min`;
+    $('#videoDetailChips').innerHTML = `<span class="chip">${escapeHtml(v.category || 'Exercício')}</span><span class="chip">${escapeHtml(v.body_area || 'Corpo')}</span><span class="chip">${escapeHtml(v.level || 'Leve')}</span>`;
+    videoDialog.showModal();
+  }
+
+  async function markComplete() {
+    if (!selectedVideo || profile?.role !== 'patient') return;
+    const payload = { patient_id: session.user.id, video_id: selectedVideo.id, completed:true, watched_at:new Date().toISOString() };
+    const { error } = await sb.from('progress').upsert(payload, { onConflict:'patient_id,video_id' });
+    if (error) { toast('Não foi possível salvar o progresso.', true); return; }
+    toast('Vídeo marcado como concluído.');
+    await loadProgress();
+  }
+
+  async function loadProgress() {
+    if (!sb || profile?.role !== 'patient') return;
+    const { data, error } = await sb.from('progress').select('video_id,watched_at,completed,videos(title,duration_minutes,therapist_name)').eq('patient_id', session.user.id).eq('completed', true).order('watched_at',{ascending:false});
+    if (error) { toast('Erro ao carregar progresso.', true); return; }
+    const rows = data || [];
+    $('#completedCount').textContent = rows.length;
+    $('#completedMinutes').textContent = rows.reduce((s,r)=>s+(Number(r.videos?.duration_minutes)||0),0);
+    $('#lastCompleted').textContent = rows[0]?.watched_at ? new Date(rows[0].watched_at).toLocaleDateString('pt-BR') : '—';
+    $('#progressList').innerHTML = rows.length ? rows.map(r=>`<div class="progress-item"><div><b>${escapeHtml(r.videos?.title || 'Vídeo')}</b><small>${escapeHtml(r.videos?.therapist_name || 'Fisioterapeuta')} · ${new Date(r.watched_at).toLocaleString('pt-BR')}</small></div><span class="chip">Concluído</span></div>`).join('') : '<div class="empty">Você ainda não marcou nenhum vídeo como concluído.</div>';
+  }
+
+  function sanitizeFilename(name) {
+    const ext = name.includes('.') ? '.' + name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'') : '';
+    return `video-${Date.now()}-${Math.random().toString(36).slice(2,9)}${ext}`;
+  }
+
+  async function uploadVideo(e) {
+    e.preventDefault();
+    if (profile?.role !== 'therapist') return toast('Apenas fisioterapeutas podem publicar vídeos.', true);
+    const file = $('#videoFile').files[0];
+    if (!file) return toast('Escolha um vídeo.', true);
+    if (!['video/mp4','video/webm'].includes(file.type)) return toast('Use um arquivo MP4 ou WebM.', true);
+    if (file.size > 200 * 1024 * 1024) return toast('O vídeo deve ter no máximo 200 MB.', true);
+
+    const status = $('#uploadStatus');
+    status.classList.remove('hidden');
+    status.textContent = 'Enviando vídeo... não feche esta página.';
+    const path = `${session.user.id}/${sanitizeFilename(file.name)}`;
+    const { error: uploadError } = await sb.storage.from('fisiolink-videos').upload(path, file, { cacheControl:'3600', upsert:false, contentType:file.type });
+    if (uploadError) { status.classList.add('hidden'); toast(`Erro no upload: ${uploadError.message}`, true); return; }
+
+    const row = {
+      therapist_id: session.user.id,
+      therapist_name: profile.name,
+      title: $('#videoTitle').value.trim(),
+      category: $('#videoCategory').value.trim(),
+      body_area: $('#videoBodyArea').value.trim(),
+      level: $('#videoLevel').value,
+      duration_minutes: Number($('#videoDuration').value),
+      description: $('#videoDescription').value.trim(),
+      storage_path: path,
+      active: true
+    };
+    const { error: dbError } = await sb.from('videos').insert(row);
+    if (dbError) {
+      await sb.storage.from('fisiolink-videos').remove([path]);
+      status.classList.add('hidden'); toast(`Erro ao salvar vídeo: ${dbError.message}`, true); return;
+    }
+    $('#uploadForm').reset(); $('#videoDuration').value = 8;
+    status.textContent = 'Vídeo publicado com sucesso.';
+    toast('Vídeo publicado. Os pacientes já podem visualizá-lo.');
+    await loadVideos();
+    setTimeout(()=>status.classList.add('hidden'),2500);
+    showPage('meus-videos');
+  }
+
+  async function loadMyVideos() {
+    if (!sb || profile?.role !== 'therapist') return;
+    const { data, error } = await sb.from('videos').select('*').eq('therapist_id', session.user.id).order('created_at',{ascending:false});
+    if (error) { toast('Erro ao carregar seus vídeos.', true); return; }
+    const own = data || [];
+    $('#myVideosCount').textContent = own.length;
+    $('#activeVideosCount').textContent = own.filter(v=>v.active).length;
+    const ids = own.map(v=>v.id);
+    let completions = 0;
+    if (ids.length) {
+      const { count } = await sb.from('progress').select('*', { count:'exact', head:true }).in('video_id', ids).eq('completed', true);
+      completions = count || 0;
+    }
+    $('#therapistCompletions').textContent = completions;
+    $('#myVideosList').innerHTML = own.length ? own.map(v=>`<div class="manage-item"><div><b>${escapeHtml(v.title)}</b><small>${escapeHtml(v.category || '')} · ${v.duration_minutes || '—'} min · ${v.active ? 'Ativo' : 'Oculto'}</small></div><div class="manage-actions"><button class="btn ghost" data-toggle-video="${v.id}" data-active="${v.active}">${v.active?'Ocultar':'Ativar'}</button><button class="btn ghost danger" data-delete-video="${v.id}" data-path="${encodeURIComponent(v.storage_path)}">Excluir</button></div></div>`).join('') : '<div class="empty">Você ainda não publicou nenhum vídeo.</div>';
+  }
+
+  async function toggleVideo(id, active) {
+    const { error } = await sb.from('videos').update({active: !active}).eq('id', id).eq('therapist_id', session.user.id);
+    if (error) return toast('Não foi possível atualizar o vídeo.', true);
+    toast(!active ? 'Vídeo ativado.' : 'Vídeo ocultado.');
+    await loadMyVideos(); await loadVideos();
+  }
+
+  async function deleteVideo(id, path) {
+    if (!confirm('Excluir este vídeo permanentemente?')) return;
+    const { error: storageError } = await sb.storage.from('fisiolink-videos').remove([path]);
+    if (storageError) return toast(`Erro ao apagar arquivo: ${storageError.message}`, true);
+    const { error } = await sb.from('videos').delete().eq('id', id).eq('therapist_id', session.user.id);
+    if (error) return toast('Arquivo apagado, mas houve erro ao remover o registro.', true);
+    toast('Vídeo excluído.');
+    await loadMyVideos(); await loadVideos();
+  }
+
+  async function login(e) {
+    e.preventDefault();
+    if (!configured) return toast('Configure o Supabase primeiro.', true);
+    const { error } = await sb.auth.signInWithPassword({ email:$('#loginEmail').value.trim(), password:$('#loginPassword').value });
+    if (error) return toast(error.message, true);
+    authDialog.close(); $('#loginForm').reset();
+  }
+
+  async function register(e) {
+    e.preventDefault();
+    if (!configured) return toast('Configure o Supabase primeiro.', true);
+    const name = $('#registerName').value.trim();
+    const role = $('#registerRole').value;
+    const { data, error } = await sb.auth.signUp({
+      email: $('#registerEmail').value.trim(),
+      password: $('#registerPassword').value,
+      options: { data: { name, role } }
+    });
+    if (error) return toast(error.message, true);
+    if (!data.session) toast('Conta criada. Confirme o e-mail antes de entrar.');
+    else toast('Conta criada com sucesso.');
+    authDialog.close(); $('#registerForm').reset();
+  }
+
+  function escapeHtml(value='') {
+    return String(value).replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+  }
+
+  $('#openLogin').onclick = () => { switchAuth('login'); authDialog.showModal(); };
+  $('#closeAuth').onclick = () => authDialog.close();
+  $('#openRegister').onclick = () => { switchAuth('register'); authDialog.showModal(); };
+  $('#showRegister').onclick = () => switchAuth('register');
+  $('#showLogin').onclick = () => switchAuth('login');
+  $('#loginForm').onsubmit = login;
+  $('#registerForm').onsubmit = register;
+  $('#logoutBtn').onclick = async () => { if (sb) await sb.auth.signOut(); };
+  $('#uploadForm').onsubmit = uploadVideo;
+  $('#videoSearch').oninput = renderVideos;
+  $('#categoryFilter').onchange = renderVideos;
+  $('#videoGrid').onclick = e => { const btn=e.target.closest('[data-open-video]'); if(btn) openVideo(btn.dataset.openVideo); };
+  $('#markCompleteBtn').onclick = markComplete;
+  $$('[data-close-video]').forEach(b=>b.onclick=()=>videoDialog.close());
+  videoDialog.addEventListener('close',()=>{ $('#videoPlayer').pause(); $('#videoPlayer').removeAttribute('src'); $('#videoPlayer').load(); selectedVideo=null; });
+  $$('.nav-btn').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+  $('#myVideosList').onclick = e => {
+    const toggle=e.target.closest('[data-toggle-video]');
+    if(toggle) return toggleVideo(toggle.dataset.toggleVideo, toggle.dataset.active==='true');
+    const del=e.target.closest('[data-delete-video]');
+    if(del) return deleteVideo(del.dataset.deleteVideo, decodeURIComponent(del.dataset.path));
+  };
+
+  // Estado inicial
+  $$('.page').forEach(p => p.style.display = p.id === 'page-videos' ? 'block' : 'none');
+  bootstrap();
+})();

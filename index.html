@@ -1,222 +1,154 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="FisioLink — plataforma demonstrativa para acompanhamento de fisioterapia, prevenção e conexão com profissionais." />
-  <meta name="theme-color" content="#0b6f75" />
-  <title>FisioLink | Fisioterapia mais próxima de você</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0a7b83" />
+  <meta name="description" content="FisioLink — vídeos orientados por fisioterapeutas e acompanhamento do paciente." />
+  <title>FisioLink</title>
   <link rel="stylesheet" href="./estilos.css" />
 </head>
 <body>
   <div id="toast" class="toast" aria-live="polite"></div>
 
   <header class="topbar">
-    <a class="brand" href="#inicio" aria-label="FisioLink - início">
-      <span class="brand-mark">FL</span>
-      <span><strong>Fisio</strong>Link</span>
-    </a>
-    <nav class="nav" aria-label="Navegação principal">
-      <button data-view="inicio" class="nav-btn active">Início</button>
-      <button data-view="exercicios" class="nav-btn">Exercícios</button>
-      <button data-view="progresso" class="nav-btn">Progresso</button>
-      <button data-view="profissionais" class="nav-btn">Profissionais</button>
-      <button data-view="prevencao" class="nav-btn">Prevenção</button>
+    <a class="brand" href="#" id="brandBtn"><span class="brand-mark">FL</span><span><b>Fisio</b>Link</span></a>
+    <nav id="appNav" class="nav hidden">
+      <button data-page="videos" class="nav-btn active">Vídeos</button>
+      <button data-page="progresso" class="nav-btn patient-only">Meu progresso</button>
+      <button data-page="upload" class="nav-btn therapist-only">Adicionar vídeo</button>
+      <button data-page="meus-videos" class="nav-btn therapist-only">Minha biblioteca</button>
     </nav>
-    <div class="header-actions">
-      <button id="btnAcessibilidade" class="ghost" title="Aumentar texto">Aa</button>
-      <button id="btnEntrar" class="primary">Entrar</button>
+    <div class="top-actions">
+      <span id="userBadge" class="user-badge hidden"></span>
+      <button id="logoutBtn" class="btn ghost hidden">Sair</button>
     </div>
   </header>
 
   <main>
-    <section id="inicio" class="view active-view">
-      <div class="hero wrap">
-        <div class="hero-copy">
-          <span class="eyebrow">Fisioterapia + acompanhamento + conexão</span>
-          <h1>Seu cuidado continua <span>fora da clínica.</span></h1>
-          <p>Acompanhe exercícios orientados, registre seu progresso e encontre fisioterapeutas e clínicas em um só lugar.</p>
-          <div class="hero-actions">
-            <button class="primary big" data-view="exercicios">Ver exercícios</button>
-            <button class="secondary big" data-open="cadastro">Criar conta grátis</button>
-          </div>
-          <div class="hero-trust">
-            <span>✓ Conteúdo passo a passo</span>
-            <span>✓ Progresso salvo</span>
-            <span>✓ Profissionais cadastrados</span>
-          </div>
+    <section id="landing" class="landing wrap">
+      <div class="hero-copy">
+        <span class="eyebrow">Fisioterapia conectada</span>
+        <h1>O fisioterapeuta publica. <span>O paciente acompanha.</span></h1>
+        <p>O FisioLink permite que profissionais publiquem vídeos dos exercícios orientados e que pacientes assistam, filtrem e registrem o que concluíram.</p>
+        <div class="hero-actions">
+          <button id="openRegister" class="btn primary big">Criar conta</button>
+          <button id="openLogin" class="btn secondary big">Entrar</button>
         </div>
-        <div class="hero-card">
-          <div class="phone">
-            <div class="phone-top"><span></span><b>FisioLink</b><small>09:41</small></div>
-            <div class="patient-chip"><span class="avatar">LM</span><div><small>Bom dia,</small><b>Lucas</b></div></div>
-            <div class="mini-progress">
-              <div class="ring" style="--p:72"><span>72%</span></div>
-              <div><b>Meta semanal</b><small>3 de 4 sessões concluídas</small></div>
-            </div>
-            <div class="phone-session">
-              <span class="play">▶</span><div><b>Mobilidade de ombro</b><small>8 min · nível leve</small></div>
-            </div>
-            <div class="phone-session alt">
-              <span class="play">✓</span><div><b>Alongamento lombar</b><small>Concluído hoje</small></div>
-            </div>
-          </div>
+        <div class="trust-row"><span>✓ Upload real de vídeos</span><span>✓ Acesso por conta</span><span>✓ Progresso do paciente</span></div>
+      </div>
+      <div class="hero-card">
+        <div class="video-mock">
+          <div class="mock-header"><span class="dot"></span><span>Biblioteca do paciente</span></div>
+          <div class="mock-video">▶</div>
+          <h3>Mobilidade de ombro</h3>
+          <p>Publicado pelo fisioterapeuta · 8 min</p>
+          <button class="btn primary full" disabled>Assistir vídeo</button>
         </div>
       </div>
+    </section>
 
-      <section class="wrap stats-grid" aria-label="Destaques">
-        <article><strong>+30</strong><span>exercícios demonstrativos</span></article>
-        <article><strong>3</strong><span>perfis: paciente, profissional e clínica</span></article>
-        <article><strong>100%</strong><span>responsivo e pronto para apresentação</span></article>
-        <article><strong>24h</strong><span>acesso ao histórico e progresso</span></article>
+    <section id="setupWarning" class="wrap setup-warning hidden">
+      <strong>Configuração do Supabase pendente.</strong>
+      <span>Preencha <code>config.js</code> com a URL e a chave pública do seu projeto para ativar login e upload real.</span>
+    </section>
+
+    <section id="app" class="hidden">
+      <section id="page-videos" class="page wrap section active-page">
+        <div class="section-head">
+          <div><span class="eyebrow">Biblioteca</span><h2>Vídeos orientados</h2><p>Conteúdos publicados pelos profissionais cadastrados.</p></div>
+          <div class="filters patient-only">
+            <input id="videoSearch" type="search" placeholder="Buscar exercício..." />
+            <select id="categoryFilter"><option value="">Todas as categorias</option></select>
+          </div>
+        </div>
+        <div id="videoGrid" class="video-grid"></div>
+        <div id="videoEmpty" class="empty hidden">Nenhum vídeo encontrado.</div>
       </section>
 
-      <section class="wrap section">
-        <div class="section-head"><div><span class="eyebrow">Como funciona</span><h2>Simples para quem precisa cuidar do movimento</h2></div></div>
-        <div class="feature-grid">
-          <article class="feature"><span>01</span><h3>Receba sua rotina</h3><p>Organize exercícios já orientados por um profissional e veja instruções claras.</p></article>
-          <article class="feature"><span>02</span><h3>Faça em casa</h3><p>Use vídeos e passos objetivos para lembrar como executar cada movimento.</p></article>
-          <article class="feature"><span>03</span><h3>Registre evolução</h3><p>Marque sessões, dor percebida e facilidade para acompanhar sua evolução.</p></article>
-          <article class="feature"><span>04</span><h3>Conecte-se</h3><p>Encontre profissionais e clínicas para avaliação e acompanhamento presencial.</p></article>
+      <section id="page-progresso" class="page wrap section">
+        <div class="section-head"><div><span class="eyebrow">Paciente</span><h2>Meu progresso</h2><p>Veja os vídeos que você já concluiu.</p></div></div>
+        <div class="stats-grid">
+          <article><small>Vídeos concluídos</small><strong id="completedCount">0</strong></article>
+          <article><small>Minutos concluídos</small><strong id="completedMinutes">0</strong></article>
+          <article><small>Última conclusão</small><strong id="lastCompleted">—</strong></article>
         </div>
+        <div id="progressList" class="list-panel"></div>
       </section>
 
-      <section class="wrap safety-banner">
-        <div><span class="shield">+</span></div>
-        <div><h3>O FisioLink não realiza diagnósticos</h3><p>O protótipo apoia o acompanhamento e a educação. Exercícios terapêuticos devem seguir orientação de um fisioterapeuta ou outro profissional habilitado.</p></div>
+      <section id="page-upload" class="page wrap section">
+        <div class="section-head"><div><span class="eyebrow">Profissional</span><h2>Adicionar vídeo</h2><p>Publique um exercício para os pacientes visualizarem.</p></div></div>
+        <form id="uploadForm" class="panel form-grid">
+          <label>Título<input id="videoTitle" required maxlength="100" placeholder="Ex.: Mobilidade de ombro" /></label>
+          <label>Categoria<input id="videoCategory" required maxlength="50" placeholder="Ex.: Ombro" /></label>
+          <label>Região do corpo<input id="videoBodyArea" maxlength="50" placeholder="Ex.: Ombro direito" /></label>
+          <label>Nível<select id="videoLevel"><option>Leve</option><option>Moderado</option><option>Avançado</option></select></label>
+          <label>Duração aproximada (min)<input id="videoDuration" type="number" min="1" max="180" value="8" required /></label>
+          <label class="full-field">Descrição<textarea id="videoDescription" rows="4" maxlength="700" placeholder="Explique objetivo, cuidados e como o paciente deve usar este vídeo."></textarea></label>
+          <label class="full-field file-box">Arquivo de vídeo
+            <input id="videoFile" type="file" accept="video/mp4,video/webm" required />
+            <small>MP4 ou WebM · até 200 MB.</small>
+          </label>
+          <div id="uploadStatus" class="upload-status hidden full-field"></div>
+          <button class="btn primary full-field" type="submit">Publicar vídeo</button>
+        </form>
+        <div class="info-note">O FisioLink é uma ferramenta de apoio e não substitui avaliação clínica. Publique apenas exercícios adequados ao acompanhamento do paciente.</div>
       </section>
-    </section>
 
-    <section id="exercicios" class="view wrap section">
-      <div class="section-head stack-mobile">
-        <div><span class="eyebrow">Biblioteca</span><h2>Exercícios e rotinas</h2><p>Use os filtros para encontrar conteúdos demonstrativos.</p></div>
-        <div class="filters">
-          <select id="filtroRegiao" aria-label="Filtrar por região">
-            <option value="todos">Todas as regiões</option><option>Ombro</option><option>Coluna</option><option>Joelho</option><option>Quadril</option><option>Tornozelo</option>
-          </select>
-          <select id="filtroNivel" aria-label="Filtrar por nível">
-            <option value="todos">Todos os níveis</option><option>Leve</option><option>Moderado</option>
-          </select>
+      <section id="page-meus-videos" class="page wrap section">
+        <div class="section-head"><div><span class="eyebrow">Profissional</span><h2>Minha biblioteca</h2><p>Gerencie os vídeos que você publicou.</p></div></div>
+        <div class="stats-grid therapist-stats">
+          <article><small>Total publicado</small><strong id="myVideosCount">0</strong></article>
+          <article><small>Ativos</small><strong id="activeVideosCount">0</strong></article>
+          <article><small>Conclusões de pacientes</small><strong id="therapistCompletions">0</strong></article>
         </div>
-      </div>
-      <div id="exerciseGrid" class="exercise-grid"></div>
-    </section>
-
-    <section id="progresso" class="view wrap section">
-      <div class="section-head"><div><span class="eyebrow">Meu progresso</span><h2>Acompanhe sua constância</h2></div><button id="btnNovaSessao" class="primary">+ Registrar sessão</button></div>
-      <div class="dashboard-grid">
-        <article class="dashboard-card highlight"><small>Sequência atual</small><strong id="streak">4 dias</strong><span>Continue mantendo o ritmo.</span></article>
-        <article class="dashboard-card"><small>Sessões concluídas</small><strong id="totalSessions">8</strong><span>neste protótipo</span></article>
-        <article class="dashboard-card"><small>Minutos praticados</small><strong id="totalMinutes">86</strong><span>acumulados</span></article>
-        <article class="dashboard-card"><small>Dor média registrada</small><strong id="avgPain">3,2/10</strong><span>somente autorrelato</span></article>
-      </div>
-      <div class="progress-layout">
-        <article class="panel">
-          <div class="panel-head"><h3>Meta semanal</h3><span id="weekLabel">3/4 sessões</span></div>
-          <div class="bar"><span id="weekBar" style="width:75%"></span></div>
-          <div class="week-days" id="weekDays"></div>
-        </article>
-        <article class="panel">
-          <div class="panel-head"><h3>Histórico recente</h3><button id="btnLimparHistorico" class="link-btn">Limpar</button></div>
-          <div id="historyList" class="history-list"></div>
-        </article>
-      </div>
-    </section>
-
-    <section id="profissionais" class="view wrap section">
-      <div class="section-head stack-mobile">
-        <div><span class="eyebrow">Conexão profissional</span><h2>Fisioterapeutas e clínicas</h2><p>Perfis demonstrativos para apresentação do fluxo da startup.</p></div>
-        <div class="search-box"><input id="professionalSearch" type="search" placeholder="Buscar por nome ou especialidade" /><button id="btnLocalizacao" class="secondary">📍 Próximos</button></div>
-      </div>
-      <div id="professionalGrid" class="professional-grid"></div>
-    </section>
-
-    <section id="prevencao" class="view wrap section">
-      <div class="section-head"><div><span class="eyebrow">Conteúdo educativo</span><h2>Prevenção e hábitos</h2><p>Informações gerais, sem diagnóstico ou prescrição individual.</p></div></div>
-      <div class="content-grid">
-        <article class="content-card"><span>🧍</span><h3>Pausas no trabalho</h3><p>Alterne posições e faça pequenas pausas durante longos períodos sentado ou em pé.</p><button class="link-btn" data-tip="pausas">Ver dicas</button></article>
-        <article class="content-card"><span>🏃</span><h3>Retorno gradual</h3><p>Após afastamento, aumentos bruscos de carga podem dificultar a adaptação do corpo.</p><button class="link-btn" data-tip="retorno">Ver dicas</button></article>
-        <article class="content-card"><span>😴</span><h3>Recuperação</h3><p>Sono, descanso e regularidade fazem parte de uma rotina saudável de recuperação.</p><button class="link-btn" data-tip="recuperacao">Ver dicas</button></article>
-        <article class="content-card"><span>🩺</span><h3>Quando procurar ajuda</h3><p>Procure avaliação profissional quando houver dor persistente, piora importante ou limitação funcional.</p><button class="link-btn" data-tip="ajuda">Ver orientações</button></article>
-      </div>
+        <div id="myVideosList" class="manage-list"></div>
+      </section>
     </section>
   </main>
 
-  <footer>
-    <div class="wrap footer-grid">
-      <div><a class="brand footer-brand" href="#inicio"><span class="brand-mark">FL</span><span><strong>Fisio</strong>Link</span></a><p>Tecnologia para aproximar pessoas da fisioterapia e do acompanhamento profissional.</p></div>
-      <div><b>Produto</b><a href="#exercicios">Exercícios</a><a href="#progresso">Progresso</a><a href="#profissionais">Profissionais</a></div>
-      <div><b>Importante</b><span>Protótipo demonstrativo</span><span>Não substitui avaliação profissional</span><span>Não realiza diagnóstico</span></div>
-    </div>
-    <div class="wrap copyright">© 2026 FisioLink — Protótipo de startup.</div>
-  </footer>
-
-  <dialog id="authModal" class="modal">
-    <button class="modal-close" data-close>×</button>
-    <div id="authChoice">
-      <span class="eyebrow">Acesso FisioLink</span><h2>Como você quer entrar?</h2><p>Escolha um perfil para demonstrar a experiência.</p>
-      <div class="profile-choice">
-        <button data-profile="paciente"><span>🙂</span><b>Paciente</b><small>Acompanhar exercícios e evolução</small></button>
-        <button data-profile="profissional"><span>🩺</span><b>Profissional / Clínica</b><small>Gerenciar pacientes e conteúdos</small></button>
+  <dialog id="authDialog" class="dialog">
+    <div class="dialog-card" id="authFormWrap">
+      <button class="dialog-close" type="button" id="closeAuth" aria-label="Fechar">×</button>
+      <div id="loginPanel">
+        <span class="eyebrow">Acesso</span><h2>Entrar no FisioLink</h2>
+        <form id="loginForm" class="stack-form">
+          <label>E-mail<input id="loginEmail" type="email" required /></label>
+          <label>Senha<input id="loginPassword" type="password" minlength="6" required /></label>
+          <button class="btn primary" type="submit">Entrar</button>
+        </form>
+        <p class="switch-text">Ainda não tem conta? <button id="showRegister" type="button" class="link-btn">Criar conta</button></p>
+      </div>
+      <div id="registerPanel" class="hidden">
+        <span class="eyebrow">Cadastro</span><h2>Criar conta</h2>
+        <form id="registerForm" class="stack-form">
+          <label>Nome completo<input id="registerName" required maxlength="100" /></label>
+          <label>Perfil<select id="registerRole"><option value="patient">Paciente</option><option value="therapist">Fisioterapeuta</option></select></label>
+          <label>E-mail<input id="registerEmail" type="email" required /></label>
+          <label>Senha<input id="registerPassword" type="password" minlength="6" required /></label>
+          <button class="btn primary" type="submit">Criar conta</button>
+        </form>
+        <p class="switch-text">Já tem conta? <button id="showLogin" type="button" class="link-btn">Entrar</button></p>
       </div>
     </div>
-    <form id="loginForm" class="hidden">
-      <button type="button" id="backAuth" class="link-btn">← Voltar</button>
-      <h2 id="loginTitle">Entrar</h2>
-      <label>E-mail<input id="loginEmail" type="email" required placeholder="voce@email.com" /></label>
-      <label>Senha<input id="loginPassword" type="password" required minlength="4" placeholder="••••••••" /></label>
-      <button class="primary full" type="submit">Entrar na demonstração</button>
-      <small class="helper">Qualquer e-mail válido e senha com 4+ caracteres funcionam no protótipo.</small>
-    </form>
   </dialog>
 
-  <dialog id="cadastroModal" class="modal">
-    <button class="modal-close" data-close>×</button>
-    <span class="eyebrow">Comece grátis</span><h2>Criar conta demonstrativa</h2>
-    <form id="cadastroForm" class="form-grid">
-      <label>Nome<input id="cadNome" required placeholder="Seu nome" /></label>
-      <label>E-mail<input id="cadEmail" type="email" required placeholder="voce@email.com" /></label>
-      <label>Perfil<select id="cadPerfil"><option value="Paciente">Paciente</option><option value="Profissional">Fisioterapeuta</option><option value="Clínica">Clínica</option></select></label>
-      <label>Cidade<input id="cadCidade" required placeholder="Ex.: Itarema - CE" /></label>
-      <button class="primary full-span" type="submit">Criar conta</button>
-    </form>
+  <dialog id="videoDialog" class="dialog video-dialog">
+    <div class="dialog-card wide">
+      <button class="dialog-close" data-close-video aria-label="Fechar">×</button>
+      <video id="videoPlayer" controls playsinline preload="metadata"></video>
+      <div class="video-detail-copy">
+        <div class="chips" id="videoDetailChips"></div>
+        <h2 id="videoDetailTitle"></h2>
+        <p id="videoDetailDescription"></p>
+        <small id="videoDetailMeta"></small>
+        <button id="markCompleteBtn" class="btn primary patient-only">Marcar como concluído</button>
+      </div>
+    </div>
   </dialog>
 
-  <dialog id="exerciseModal" class="modal wide">
-    <button class="modal-close" data-close>×</button>
-    <div id="exerciseDetail"></div>
-  </dialog>
-
-  <dialog id="sessionModal" class="modal">
-    <button class="modal-close" data-close>×</button>
-    <span class="eyebrow">Registro pessoal</span><h2>Registrar sessão</h2>
-    <form id="sessionForm" class="form-grid">
-      <label>Exercício<select id="sessionExercise"></select></label>
-      <label>Duração (min)<input id="sessionMinutes" type="number" min="1" max="180" value="10" required /></label>
-      <label>Dor percebida (0–10)<input id="sessionPain" type="number" min="0" max="10" value="3" required /></label>
-      <label>Como foi?<select id="sessionFeeling"><option>Fácil</option><option selected>Ok</option><option>Difícil</option></select></label>
-      <button class="primary full-span" type="submit">Salvar sessão</button>
-    </form>
-  </dialog>
-
-  <dialog id="bookingModal" class="modal">
-    <button class="modal-close" data-close>×</button>
-    <span class="eyebrow">Solicitar contato</span><h2 id="bookingTitle">Agendar atendimento</h2>
-    <form id="bookingForm" class="form-grid">
-      <label>Nome<input id="bookingName" required placeholder="Seu nome" /></label>
-      <label>Telefone<input id="bookingPhone" required placeholder="(88) 99999-9999" /></label>
-      <label>Data preferida<input id="bookingDate" type="date" required /></label>
-      <label>Modalidade<select id="bookingMode"><option>Presencial</option><option>Teleatendimento</option></select></label>
-      <label class="full-span">Mensagem<textarea id="bookingMessage" rows="3" placeholder="Conte brevemente o que você procura, sem dados sensíveis."></textarea></label>
-      <button class="primary full-span" type="submit">Enviar solicitação</button>
-    </form>
-  </dialog>
-
-  <dialog id="tipModal" class="modal">
-    <button class="modal-close" data-close>×</button>
-    <div id="tipContent"></div>
-  </dialog>
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
   <script src="./script.js"></script>
 </body>
 </html>
