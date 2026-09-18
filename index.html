@@ -2,9 +2,9 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#0a7b83" />
-  <meta name="description" content="FisioLink — vídeos orientados por fisioterapeutas e acompanhamento do paciente." />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0aa37f" />
+  <meta name="description" content="FisioLink — exercícios orientados, progresso, agenda e contato direto com fisioterapeutas." />
   <title>FisioLink</title>
   <link rel="stylesheet" href="./estilos.css" />
 </head>
@@ -12,140 +12,212 @@
   <div id="toast" class="toast" aria-live="polite"></div>
 
   <header class="topbar">
-    <a class="brand" href="#" id="brandBtn"><span class="brand-mark">FL</span><span><b>Fisio</b>Link</span></a>
-    <nav id="appNav" class="nav hidden">
-      <button data-page="videos" class="nav-btn active">Vídeos</button>
-      <button data-page="progresso" class="nav-btn patient-only">Meu progresso</button>
-      <button data-page="upload" class="nav-btn therapist-only">Adicionar vídeo</button>
-      <button data-page="meus-videos" class="nav-btn therapist-only">Minha biblioteca</button>
+    <button id="brandBtn" class="brand" aria-label="FisioLink - início">
+      <img src="./logo-fisiolink.png" alt="FisioLink" />
+    </button>
+
+    <nav id="desktopNav" class="desktop-nav hidden" aria-label="Navegação principal">
+      <button class="nav-btn active" data-page="inicio"><span>⌂</span>Início</button>
+      <button class="nav-btn" data-page="exercicios"><span>◉</span>Exercícios</button>
+      <button class="nav-btn" data-page="agenda"><span>▣</span>Agenda</button>
+      <button class="nav-btn" data-page="mensagens"><span>✉</span>Mensagens</button>
+      <button class="nav-btn patient-only" data-page="progresso"><span>↗</span>Progresso</button>
+      <button class="nav-btn therapist-only" data-page="upload"><span>＋</span>Publicar</button>
+      <button class="nav-btn therapist-only" data-page="meus-videos"><span>▤</span>Biblioteca</button>
     </nav>
+
     <div class="top-actions">
-      <span id="userBadge" class="user-badge hidden"></span>
-      <button id="logoutBtn" class="btn ghost hidden">Sair</button>
+      <button id="notificationBtn" class="icon-btn hidden" title="Notificações">🔔<span id="notificationDot" class="notification-dot hidden"></span></button>
+      <button id="userMenuBtn" class="user-pill hidden"><span id="userInitials">FL</span><span id="userBadge"></span></button>
+      <button id="logoutBtn" class="btn ghost compact hidden">Sair</button>
     </div>
   </header>
 
   <main>
-    <section id="landing" class="landing wrap">
-      <div class="hero-copy">
-        <span class="eyebrow">Fisioterapia conectada</span>
-        <h1>O fisioterapeuta publica. <span>O paciente acompanha.</span></h1>
-        <p>O FisioLink permite que profissionais publiquem vídeos dos exercícios orientados e que pacientes assistam, filtrem e registrem o que concluíram.</p>
-        <div class="hero-actions">
-          <button id="openRegister" class="btn primary big">Criar conta</button>
-          <button id="openLogin" class="btn secondary big">Entrar</button>
+    <section id="landing" class="landing">
+      <div class="landing-orb orb-a"></div><div class="landing-orb orb-b"></div>
+      <div class="wrap landing-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">Fisioterapia conectada</span>
+          <h1>Movimento, cuidado e <span>conexão</span> no mesmo lugar.</h1>
+          <p>Exercícios orientados, progresso, agenda e contato direto com fisioterapeutas em uma experiência simples para o dia a dia.</p>
+          <div class="hero-actions">
+            <button id="openRegister" class="btn primary big">Criar conta</button>
+            <button id="openLogin" class="btn secondary big">Entrar</button>
+          </div>
+          <div class="trust-row"><span>✓ Vídeos do fisioterapeuta</span><span>✓ Progresso do paciente</span><span>✓ Mensagens e chamadas</span></div>
         </div>
-        <div class="trust-row"><span>✓ Upload real de vídeos</span><span>✓ Acesso por conta</span><span>✓ Progresso do paciente</span></div>
-      </div>
-      <div class="hero-card">
-        <div class="video-mock">
-          <div class="mock-header"><span class="dot"></span><span>Biblioteca do paciente</span></div>
-          <div class="mock-video">▶</div>
-          <h3>Mobilidade de ombro</h3>
-          <p>Publicado pelo fisioterapeuta · 8 min</p>
-          <button class="btn primary full" disabled>Assistir vídeo</button>
+        <div class="hero-preview" aria-hidden="true">
+          <div class="preview-phone">
+            <div class="preview-head"><img src="./logo-fisiolink.png" alt="" /><span>JS</span></div>
+            <div class="preview-copy"><b>Olá, João!</b><small>Seu cuidado de hoje aproxima você de um amanhã melhor.</small></div>
+            <div class="preview-banner"><div><strong>Movimento é liberdade.</strong><small>Pequenos passos, grandes resultados.</small></div><span>↗</span></div>
+            <div class="preview-section"><b>Seus exercícios</b><span>Ver todos</span></div>
+            <div class="preview-cards"><i></i><i></i><i></i></div>
+            <div class="preview-progress"><div class="mini-ring">78%</div><div><b>Ótimo resultado!</b><small>Continue assim.</small></div></div>
+          </div>
+          <div class="floating-chat"><b>Dra. Ana</b><span>● Online agora</span><p>Como você está se sentindo hoje?</p></div>
         </div>
       </div>
     </section>
 
     <section id="setupWarning" class="wrap setup-warning hidden">
       <strong>Configuração do Supabase pendente.</strong>
-      <span>Preencha <code>config.js</code> com a URL e a chave pública do seu projeto para ativar login e upload real.</span>
+      <span>Seu <code>config.js</code> precisa continuar com a URL e a chave pública já configuradas.</span>
     </section>
 
-    <section id="app" class="hidden">
-      <section id="page-videos" class="page wrap section active-page">
-        <div class="section-head">
-          <div><span class="eyebrow">Biblioteca</span><h2>Vídeos orientados</h2><p>Conteúdos publicados pelos profissionais cadastrados.</p></div>
-          <div class="filters patient-only">
-            <input id="videoSearch" type="search" placeholder="Buscar exercício..." />
-            <select id="categoryFilter"><option value="">Todas as categorias</option></select>
+    <section id="app" class="app hidden">
+      <div class="wrap app-wrap">
+        <section id="page-inicio" class="page active-page">
+          <div class="home-head">
+            <div>
+              <span class="eyebrow">Seu cuidado hoje</span>
+              <h2 id="homeGreeting">Olá!</h2>
+              <p>Que bom ter você por aqui. Vamos cuidar do seu movimento?</p>
+            </div>
+            <div class="date-chip" id="todayChip">Hoje</div>
           </div>
-        </div>
-        <div id="videoGrid" class="video-grid"></div>
-        <div id="videoEmpty" class="empty hidden">Nenhum vídeo encontrado.</div>
-      </section>
 
-      <section id="page-progresso" class="page wrap section">
-        <div class="section-head"><div><span class="eyebrow">Paciente</span><h2>Meu progresso</h2><p>Veja os vídeos que você já concluiu.</p></div></div>
-        <div class="stats-grid">
-          <article><small>Vídeos concluídos</small><strong id="completedCount">0</strong></article>
-          <article><small>Minutos concluídos</small><strong id="completedMinutes">0</strong></article>
-          <article><small>Última conclusão</small><strong id="lastCompleted">—</strong></article>
-        </div>
-        <div id="progressList" class="list-panel"></div>
-      </section>
+          <div class="home-grid">
+            <div class="home-main">
+              <article class="wellness-hero">
+                <div>
+                  <span class="hero-kicker">MOVIMENTO QUE TRANSFORMA</span>
+                  <h3>Pequenos passos.<br><span>Grandes conquistas.</span></h3>
+                  <p>Faça seus exercícios no seu ritmo e mantenha seu fisioterapeuta por perto.</p>
+                  <button class="btn white" data-go="exercicios">Ver exercícios</button>
+                </div>
+                <div class="body-figure" aria-hidden="true"><span></span><i></i><b></b></div>
+              </article>
 
-      <section id="page-upload" class="page wrap section">
-        <div class="section-head"><div><span class="eyebrow">Profissional</span><h2>Adicionar vídeo</h2><p>Publique um exercício para os pacientes visualizarem.</p></div></div>
-        <form id="uploadForm" class="panel form-grid">
-          <label>Título<input id="videoTitle" required maxlength="100" placeholder="Ex.: Mobilidade de ombro" /></label>
-          <label>Categoria<input id="videoCategory" required maxlength="50" placeholder="Ex.: Ombro" /></label>
-          <label>Região do corpo<input id="videoBodyArea" maxlength="50" placeholder="Ex.: Ombro direito" /></label>
-          <label>Nível<select id="videoLevel"><option>Leve</option><option>Moderado</option><option>Avançado</option></select></label>
-          <label>Duração aproximada (min)<input id="videoDuration" type="number" min="1" max="180" value="8" required /></label>
-          <label class="full-field">Descrição<textarea id="videoDescription" rows="4" maxlength="700" placeholder="Explique objetivo, cuidados e como o paciente deve usar este vídeo."></textarea></label>
-          <label class="full-field file-box">Arquivo de vídeo
-            <input id="videoFile" type="file" accept="video/mp4,video/webm" required />
-            <small>MP4 ou WebM · até 200 MB.</small>
-          </label>
-          <div id="uploadStatus" class="upload-status hidden full-field"></div>
-          <button class="btn primary full-field" type="submit">Publicar vídeo</button>
-        </form>
-        <div class="info-note">O FisioLink é uma ferramenta de apoio e não substitui avaliação clínica. Publique apenas exercícios adequados ao acompanhamento do paciente.</div>
-      </section>
+              <div class="section-row"><div><h3>Seus exercícios de hoje</h3><p>Conteúdos publicados pelos profissionais.</p></div><button class="text-btn" data-go="exercicios">Ver todos →</button></div>
+              <div id="homeExercises" class="exercise-strip"></div>
+            </div>
 
-      <section id="page-meus-videos" class="page wrap section">
-        <div class="section-head"><div><span class="eyebrow">Profissional</span><h2>Minha biblioteca</h2><p>Gerencie os vídeos que você publicou.</p></div></div>
-        <div class="stats-grid therapist-stats">
-          <article><small>Total publicado</small><strong id="myVideosCount">0</strong></article>
-          <article><small>Ativos</small><strong id="activeVideosCount">0</strong></article>
-          <article><small>Conclusões de pacientes</small><strong id="therapistCompletions">0</strong></article>
-        </div>
-        <div id="myVideosList" class="manage-list"></div>
-      </section>
+            <aside class="home-side">
+              <article class="progress-card patient-only">
+                <div class="card-title"><span>Seu progresso</span><button class="text-btn" data-go="progresso">Ver evolução</button></div>
+                <div class="progress-main"><div id="homeProgressRing" class="progress-ring" style="--progress:0"><b id="homeProgressPct">0%</b></div><div><strong id="homeProgressText">Comece hoje</strong><p id="homeProgressCaption">Conclua um exercício para acompanhar sua evolução.</p></div></div>
+              </article>
+
+              <article class="next-card">
+                <div class="next-icon">▣</div>
+                <div><small>Próxima sessão</small><strong id="nextAppointmentTitle">Nenhuma agendada</strong><span id="nextAppointmentMeta">Use a agenda para solicitar um horário.</span></div>
+                <button class="circle-btn" data-go="agenda">→</button>
+              </article>
+
+              <article class="connect-card">
+                <div class="connect-avatar">✦</div>
+                <div><small>Fique perto do cuidado</small><strong>Fale com seu fisioterapeuta</strong><span>Mensagem, áudio, arquivo, ligação ou vídeo.</span></div>
+                <button class="btn primary" data-go="mensagens">Conversar</button>
+              </article>
+            </aside>
+          </div>
+        </section>
+
+        <section id="page-exercicios" class="page">
+          <div class="section-head">
+            <div><span class="eyebrow">Biblioteca</span><h2>Exercícios orientados</h2><p>Assista aos vídeos publicados pelos fisioterapeutas.</p></div>
+            <div class="filters patient-only"><input id="videoSearch" type="search" placeholder="Buscar exercício..." /><select id="categoryFilter"><option value="">Todas as categorias</option></select></div>
+          </div>
+          <div id="videoGrid" class="video-grid"></div>
+          <div id="videoEmpty" class="empty hidden">Nenhum vídeo encontrado.</div>
+        </section>
+
+        <section id="page-agenda" class="page">
+          <div class="section-head"><div><span class="eyebrow">Agenda</span><h2>Sessões e acompanhamento</h2><p>Organize seus próximos atendimentos.</p></div><button id="openAppointmentBtn" class="btn primary patient-only">+ Solicitar sessão</button></div>
+          <div class="agenda-layout">
+            <div class="agenda-calendar-card"><div class="calendar-top"><button id="prevMonth">‹</button><h3 id="calendarTitle"></h3><button id="nextMonth">›</button></div><div class="weekdays"><span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span></div><div id="calendarGrid" class="calendar-grid"></div></div>
+            <div class="agenda-list-card"><div class="section-row"><div><h3>Próximas sessões</h3><p>Solicitações e atendimentos confirmados.</p></div></div><div id="appointmentsList" class="appointment-list"></div></div>
+          </div>
+        </section>
+
+        <section id="page-mensagens" class="page messages-page">
+          <div class="messages-shell">
+            <aside class="contacts-panel">
+              <div class="contacts-head"><div><span class="eyebrow">Conexões</span><h2>Mensagens</h2></div><span id="onlineCount" class="online-pill">0 contatos</span></div>
+              <input id="contactSearch" class="contact-search" type="search" placeholder="Buscar contato..." />
+              <div id="contactsList" class="contacts-list"></div>
+            </aside>
+
+            <section class="chat-panel">
+              <div id="chatEmpty" class="chat-empty"><div class="chat-empty-icon">✉</div><h3>Escolha um contato</h3><p>Converse por mensagem, envie áudio ou arquivo e faça chamadas.</p></div>
+              <div id="chatActive" class="chat-active hidden">
+                <header class="chat-header">
+                  <button id="mobileBackContacts" class="mobile-back">‹</button>
+                  <div id="chatAvatar" class="avatar large">FL</div>
+                  <div class="chat-person"><strong id="chatName">Contato</strong><span id="chatRole">Fisioterapeuta</span><small><i></i> Disponível para conversar</small></div>
+                  <div class="chat-actions"><button id="voiceCallBtn" class="call-btn" title="Ligação de voz">☎<span>Ligar</span></button><button id="videoCallBtn" class="call-btn" title="Chamada de vídeo">▣<span>Vídeo</span></button></div>
+                </header>
+                <div id="messagesList" class="messages-list"></div>
+                <div class="quick-actions patient-only"><button id="quickSchedule">▣ Agendar sessão</button><button id="quickFile">⌕ Enviar arquivo</button><button id="quickMore">☺ Mais opções</button></div>
+                <form id="messageForm" class="message-composer">
+                  <input id="chatFileInput" type="file" hidden />
+                  <button id="attachBtn" type="button" class="composer-icon" title="Anexar arquivo">⌕</button>
+                  <button id="recordBtn" type="button" class="composer-icon" title="Gravar áudio">●</button>
+                  <textarea id="messageInput" rows="1" maxlength="1800" placeholder="Digite sua mensagem..."></textarea>
+                  <button class="send-btn" type="submit" aria-label="Enviar">➤</button>
+                </form>
+                <div id="recordingBar" class="recording-bar hidden"><span class="rec-dot"></span><b>Gravando áudio...</b><span id="recordingTimer">00:00</span><button id="cancelRecording" type="button">Cancelar</button><button id="stopRecording" type="button">Enviar</button></div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section id="page-progresso" class="page patient-only">
+          <div class="section-head"><div><span class="eyebrow">Evolução</span><h2>Meu progresso</h2><p>Acompanhe os exercícios concluídos e sua constância.</p></div></div>
+          <div class="stats-grid"><article><small>Vídeos concluídos</small><strong id="completedCount">0</strong></article><article><small>Minutos concluídos</small><strong id="completedMinutes">0</strong></article><article><small>Última conclusão</small><strong id="lastCompleted">—</strong></article></div>
+          <div id="progressList" class="list-panel"></div>
+        </section>
+
+        <section id="page-upload" class="page therapist-only">
+          <div class="section-head"><div><span class="eyebrow">Profissional</span><h2>Adicionar vídeo</h2><p>Publique um exercício para seus pacientes.</p></div></div>
+          <form id="uploadForm" class="panel form-grid">
+            <label>Título<input id="videoTitle" required maxlength="100" placeholder="Ex.: Mobilidade de ombro" /></label>
+            <label>Categoria<input id="videoCategory" required maxlength="50" placeholder="Ex.: Ombro" /></label>
+            <label>Região do corpo<input id="videoBodyArea" maxlength="50" placeholder="Ex.: Ombro direito" /></label>
+            <label>Nível<select id="videoLevel"><option>Leve</option><option>Moderado</option><option>Avançado</option></select></label>
+            <label>Duração aproximada (min)<input id="videoDuration" type="number" min="1" max="180" value="8" required /></label>
+            <label class="full-field">Descrição<textarea id="videoDescription" rows="4" maxlength="700" placeholder="Explique objetivo, cuidados e execução do exercício."></textarea></label>
+            <label class="full-field file-box">Arquivo de vídeo<input id="videoFile" type="file" accept="video/mp4,video/webm" required /><small>MP4 ou WebM · até 200 MB.</small></label>
+            <div id="uploadStatus" class="upload-status hidden full-field"></div>
+            <button class="btn primary full-field" type="submit">Publicar vídeo</button>
+          </form>
+          <div class="info-note">O FisioLink apoia o acompanhamento e não substitui avaliação clínica. Publique apenas conteúdos adequados aos seus pacientes.</div>
+        </section>
+
+        <section id="page-meus-videos" class="page therapist-only">
+          <div class="section-head"><div><span class="eyebrow">Profissional</span><h2>Minha biblioteca</h2><p>Gerencie os vídeos já publicados.</p></div></div>
+          <div class="stats-grid therapist-stats"><article><small>Total publicado</small><strong id="myVideosCount">0</strong></article><article><small>Ativos</small><strong id="activeVideosCount">0</strong></article><article><small>Conclusões</small><strong id="therapistCompletions">0</strong></article></div>
+          <div id="myVideosList" class="manage-list"></div>
+        </section>
+      </div>
     </section>
   </main>
 
+  <nav id="mobileNav" class="mobile-nav hidden" aria-label="Navegação móvel">
+    <button data-page="inicio" class="active"><span>⌂</span><small>Início</small></button>
+    <button data-page="exercicios"><span>◉</span><small>Exercícios</small></button>
+    <button data-page="agenda"><span>▣</span><small>Agenda</small></button>
+    <button data-page="mensagens"><span>✉</span><small>Mensagens</small></button>
+    <button data-page="progresso" class="patient-only"><span>↗</span><small>Progresso</small></button>
+    <button data-page="meus-videos" class="therapist-only"><span>▤</span><small>Biblioteca</small></button>
+  </nav>
+
   <dialog id="authDialog" class="dialog">
-    <div class="dialog-card" id="authFormWrap">
+    <div class="dialog-card auth-card">
       <button class="dialog-close" type="button" id="closeAuth" aria-label="Fechar">×</button>
-      <div id="loginPanel">
-        <span class="eyebrow">Acesso</span><h2>Entrar no FisioLink</h2>
-        <form id="loginForm" class="stack-form">
-          <label>E-mail<input id="loginEmail" type="email" required /></label>
-          <label>Senha<input id="loginPassword" type="password" minlength="6" required /></label>
-          <button class="btn primary" type="submit">Entrar</button>
-        </form>
-        <p class="switch-text">Ainda não tem conta? <button id="showRegister" type="button" class="link-btn">Criar conta</button></p>
-      </div>
-      <div id="registerPanel" class="hidden">
-        <span class="eyebrow">Cadastro</span><h2>Criar conta</h2>
-        <form id="registerForm" class="stack-form">
-          <label>Nome completo<input id="registerName" required maxlength="100" /></label>
-          <label>Perfil<select id="registerRole"><option value="patient">Paciente</option><option value="therapist">Fisioterapeuta</option></select></label>
-          <label>E-mail<input id="registerEmail" type="email" required /></label>
-          <label>Senha<input id="registerPassword" type="password" minlength="6" required /></label>
-          <button class="btn primary" type="submit">Criar conta</button>
-        </form>
-        <p class="switch-text">Já tem conta? <button id="showLogin" type="button" class="link-btn">Entrar</button></p>
-      </div>
+      <img class="dialog-logo" src="./logo-fisiolink.png" alt="FisioLink" />
+      <div id="loginPanel"><span class="eyebrow">Acesso</span><h2>Bem-vindo de volta</h2><p class="dialog-sub">Entre para continuar seu acompanhamento.</p><form id="loginForm" class="stack-form"><label>E-mail<input id="loginEmail" type="email" required /></label><label>Senha<input id="loginPassword" type="password" minlength="6" required /></label><button class="btn primary" type="submit">Entrar</button></form><p class="switch-text">Ainda não tem conta? <button id="showRegister" type="button" class="link-btn">Criar conta</button></p></div>
+      <div id="registerPanel" class="hidden"><span class="eyebrow">Cadastro</span><h2>Criar conta</h2><p class="dialog-sub">Escolha seu perfil para personalizar a experiência.</p><form id="registerForm" class="stack-form"><label>Nome completo<input id="registerName" required maxlength="100" /></label><label>Perfil<select id="registerRole"><option value="patient">Paciente</option><option value="therapist">Fisioterapeuta</option></select></label><label>E-mail<input id="registerEmail" type="email" required /></label><label>Senha<input id="registerPassword" type="password" minlength="6" required /></label><button class="btn primary" type="submit">Criar conta</button></form><p class="switch-text">Já tem conta? <button id="showLogin" type="button" class="link-btn">Entrar</button></p></div>
     </div>
   </dialog>
 
-  <dialog id="videoDialog" class="dialog video-dialog">
-    <div class="dialog-card wide">
-      <button class="dialog-close" data-close-video aria-label="Fechar">×</button>
-      <video id="videoPlayer" controls playsinline preload="metadata"></video>
-      <div class="video-detail-copy">
-        <div class="chips" id="videoDetailChips"></div>
-        <h2 id="videoDetailTitle"></h2>
-        <p id="videoDetailDescription"></p>
-        <small id="videoDetailMeta"></small>
-        <button id="markCompleteBtn" class="btn primary patient-only">Marcar como concluído</button>
-      </div>
-    </div>
-  </dialog>
+  <dialog id="videoDialog" class="dialog video-dialog"><div class="dialog-card wide"><button class="dialog-close" data-close-video aria-label="Fechar">×</button><video id="videoPlayer" controls playsinline preload="metadata"></video><div class="video-detail-copy"><div class="chips" id="videoDetailChips"></div><h2 id="videoDetailTitle"></h2><p id="videoDetailDescription"></p><small id="videoDetailMeta"></small><button id="markCompleteBtn" class="btn primary patient-only">Marcar como concluído</button></div></div></dialog>
+
+  <dialog id="appointmentDialog" class="dialog"><div class="dialog-card"><button class="dialog-close" id="closeAppointment" aria-label="Fechar">×</button><span class="eyebrow">Agenda</span><h2>Solicitar sessão</h2><p class="dialog-sub">Escolha o fisioterapeuta e um horário preferido.</p><form id="appointmentForm" class="stack-form"><label>Fisioterapeuta<select id="appointmentTherapist" required></select></label><label>Data e hora<input id="appointmentDate" type="datetime-local" required /></label><label>Modalidade<select id="appointmentMode"><option value="online">Online</option><option value="presencial">Presencial</option></select></label><label>Observação<textarea id="appointmentNote" rows="3" maxlength="300" placeholder="Ex.: Quero revisar os exercícios de lombar."></textarea></label><button class="btn primary" type="submit">Enviar solicitação</button></form></div></dialog>
+
+  <dialog id="callDialog" class="dialog call-dialog"><div class="call-card"><div class="call-glow"></div><div id="callAvatar" class="call-avatar">FL</div><span id="callStatus" class="call-status">Chamando...</span><h2 id="callName">Contato</h2><p id="callTypeLabel">Ligação de voz</p><div id="videoStage" class="video-stage hidden"><video id="remoteVideo" autoplay playsinline></video><video id="localVideo" autoplay playsinline muted></video></div><audio id="remoteAudio" autoplay></audio><div class="call-controls"><button id="muteCallBtn" class="round-control">🎙<small>Microfone</small></button><button id="toggleCameraBtn" class="round-control hidden">▣<small>Câmera</small></button><button id="acceptCallBtn" class="round-control accept hidden">✓<small>Atender</small></button><button id="declineCallBtn" class="round-control end hidden">✕<small>Recusar</small></button><button id="endCallBtn" class="round-control end">☎<small>Encerrar</small></button></div></div></dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
