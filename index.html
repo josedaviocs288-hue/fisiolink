@@ -24,6 +24,7 @@
       <button class="nav-btn patient-only" data-page="progresso"><span>↗</span>Progresso</button>
       <button class="nav-btn therapist-only" data-page="upload"><span>＋</span>Publicar</button>
       <button class="nav-btn therapist-only" data-page="meus-videos"><span>▤</span>Biblioteca</button>
+      <button class="nav-btn" data-page="perfil"><span>◎</span>Perfil</button>
     </nav>
 
     <div class="top-actions">
@@ -191,6 +192,92 @@
           <div class="stats-grid therapist-stats"><article><small>Total publicado</small><strong id="myVideosCount">0</strong></article><article><small>Ativos</small><strong id="activeVideosCount">0</strong></article><article><small>Conclusões</small><strong id="therapistCompletions">0</strong></article></div>
           <div id="myVideosList" class="manage-list"></div>
         </section>
+        <section id="page-perfil" class="page">
+          <div class="section-head profile-page-head">
+            <div>
+              <span class="eyebrow">Minha conta</span>
+              <h2>Perfil e preferências</h2>
+              <p>Atualize seus dados, personalize a experiência e acompanhe um resumo da sua conta.</p>
+            </div>
+            <div class="profile-health-badge"><span>✓</span><div><small>Conta protegida</small><strong>Dados salvos no Supabase</strong></div></div>
+          </div>
+
+          <div class="profile-layout">
+            <aside class="profile-sidebar">
+              <article class="profile-identity-card">
+                <div id="profileAvatar" class="profile-avatar">FL</div>
+                <input id="profileAvatarInput" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+                <button id="changeAvatarBtn" class="btn secondary compact" type="button">Alterar foto</button>
+                <h3 id="profileDisplayName">Usuário FisioLink</h3>
+                <span id="profileRoleBadge" class="role-badge">Paciente</span>
+                <p id="profileMemberSince">Membro desde —</p>
+                <div class="profile-completeness">
+                  <div><span>Perfil completo</span><b id="profileCompletionLabel">0%</b></div>
+                  <div class="completion-track"><i id="profileCompletionBar"></i></div>
+                </div>
+              </article>
+
+              <article class="profile-mini-card">
+                <span class="mini-card-icon">✦</span>
+                <div><small>FisioLink</small><strong>Seu cuidado em um só lugar</strong><p>Exercícios, agenda, progresso e contato com profissionais.</p></div>
+              </article>
+            </aside>
+
+            <div class="profile-main">
+              <div id="profileStats" class="stats-grid profile-stats">
+                <article><small id="profileStat1Label">Exercícios concluídos</small><strong id="profileStat1">0</strong></article>
+                <article><small id="profileStat2Label">Sessões</small><strong id="profileStat2">0</strong></article>
+                <article><small id="profileStat3Label">Mensagens</small><strong id="profileStat3">0</strong></article>
+              </div>
+
+              <form id="profileForm" class="panel profile-form">
+                <div class="profile-section-title"><div><span class="eyebrow">Dados pessoais</span><h3>Informações do perfil</h3></div><span class="save-hint">Você pode editar quando quiser</span></div>
+                <div class="form-grid">
+                  <label>Nome completo<input id="profileName" maxlength="100" required /></label>
+                  <label>E-mail<input id="profileEmail" type="email" disabled /></label>
+                  <label>Telefone<input id="profilePhone" maxlength="30" placeholder="(88) 99999-9999" /></label>
+                  <label>Cidade<input id="profileCity" maxlength="100" placeholder="Sua cidade" /></label>
+                  <label class="full-field">Sobre você<textarea id="profileBio" rows="4" maxlength="500" placeholder="Conte um pouco sobre você ou como prefere usar o FisioLink."></textarea></label>
+
+                  <div class="full-field therapist-only professional-fields">
+                    <div class="profile-section-title compact-title"><div><span class="eyebrow">Profissional</span><h3>Dados profissionais</h3></div></div>
+                    <div class="form-grid">
+                      <label>Especialidade<input id="profileSpecialty" maxlength="100" placeholder="Ex.: Fisioterapia ortopédica" /></label>
+                      <label>CREFITO<input id="profileCrefito" maxlength="50" placeholder="Ex.: CREFITO-6 000000-F" /></label>
+                      <label class="full-field">Clínica / local de atendimento<input id="profileClinic" maxlength="150" placeholder="Nome da clínica ou atendimento particular" /></label>
+                    </div>
+                  </div>
+                </div>
+                <div class="profile-form-actions">
+                  <span id="profileSaveStatus" class="save-status"></span>
+                  <button class="btn primary" type="submit">Salvar alterações</button>
+                </div>
+              </form>
+
+              <section class="panel preferences-panel">
+                <div class="profile-section-title"><div><span class="eyebrow">Experiência</span><h3>Preferências e acessibilidade</h3></div></div>
+                <div class="settings-list">
+                  <label class="setting-row"><div><strong>Texto maior</strong><span>Aumenta o tamanho das informações principais.</span></div><input id="prefLargeText" type="checkbox" /></label>
+                  <label class="setting-row"><div><strong>Alto contraste</strong><span>Reforça contraste de textos, bordas e botões.</span></div><input id="prefHighContrast" type="checkbox" /></label>
+                  <label class="setting-row"><div><strong>Reduzir animações</strong><span>Diminui transições e movimentos na interface.</span></div><input id="prefReducedMotion" type="checkbox" /></label>
+                  <label class="setting-row"><div><strong>Avisos de novas mensagens</strong><span>Destaca novas mensagens recebidas enquanto o app estiver aberto.</span></div><input id="prefMessageAlerts" type="checkbox" /></label>
+                  <label class="setting-row"><div><strong>Lembretes da agenda</strong><span>Mantém os próximos atendimentos em destaque.</span></div><input id="prefAppointmentAlerts" type="checkbox" /></label>
+                </div>
+              </section>
+
+              <section class="panel account-actions-panel">
+                <div class="profile-section-title"><div><span class="eyebrow">Conta</span><h3>Atalhos</h3></div></div>
+                <div class="account-action-grid">
+                  <button type="button" class="account-action" data-go="mensagens"><span>✉</span><div><strong>Mensagens</strong><small>Fale com pacientes e fisioterapeutas.</small></div><b>→</b></button>
+                  <button type="button" class="account-action" data-go="agenda"><span>▣</span><div><strong>Agenda</strong><small>Confira seus próximos atendimentos.</small></div><b>→</b></button>
+                  <button id="copyUserIdBtn" type="button" class="account-action"><span>⌘</span><div><strong>ID da conta</strong><small>Copie seu identificador do FisioLink.</small></div><b>Copiar</b></button>
+                  <button id="profileLogoutBtn" type="button" class="account-action danger-action"><span>↪</span><div><strong>Sair da conta</strong><small>Encerra sua sessão neste navegador.</small></div><b>→</b></button>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
       </div>
     </section>
   </main>
@@ -202,6 +289,7 @@
     <button data-page="mensagens"><span>✉</span><small>Mensagens</small></button>
     <button data-page="progresso" class="patient-only"><span>↗</span><small>Progresso</small></button>
     <button data-page="meus-videos" class="therapist-only"><span>▤</span><small>Biblioteca</small></button>
+    <button data-page="perfil"><span>◎</span><small>Perfil</small></button>
   </nav>
 
   <dialog id="authDialog" class="dialog">

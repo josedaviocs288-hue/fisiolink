@@ -36,6 +36,13 @@
   let incomingPoll = null;
   let callPoll = null;
   let currentCalendar = new Date();
+  let localPreferences = {
+    largeText: false,
+    highContrast: false,
+    reducedMotion: false,
+    messageAlerts: true,
+    appointmentAlerts: true
+  };
 
   let mediaRecorder = null;
   let recordingStream = null;
@@ -89,6 +96,51 @@
     return value ? new Date(value).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
   }
 
+  function readPreferences() {
+    try {
+      const raw = localStorage.getItem('fisiolink_preferences');
+      if (raw) localPreferences = { ...localPreferences, ...JSON.parse(raw) };
+    } catch (e) {
+      console.warn('Preferências locais indisponíveis', e);
+    }
+    applyPreferences();
+  }
+
+  function savePreferences() {
+    try { localStorage.setItem('fisiolink_preferences', JSON.stringify(localPreferences)); } catch (_) {}
+    applyPreferences();
+  }
+
+  function applyPreferences() {
+    document.body.classList.toggle('a11y-large', !!localPreferences.largeText);
+    document.body.classList.toggle('a11y-contrast', !!localPreferences.highContrast);
+    document.body.classList.toggle('a11y-reduced-motion', !!localPreferences.reducedMotion);
+    const pairs = {
+      prefLargeText: 'largeText',
+      prefHighContrast: 'highContrast',
+      prefReducedMotion: 'reducedMotion',
+      prefMessageAlerts: 'messageAlerts',
+      prefAppointmentAlerts: 'appointmentAlerts'
+    };
+    Object.entries(pairs).forEach(([id, key]) => {
+      const el = $(`#${id}`);
+      if (el) el.checked = !!localPreferences[key];
+    });
+  }
+
+  function setAvatarElement(el, name, url = null) {
+    if (!el) return;
+    el.textContent = initials(name);
+    el.classList.toggle('has-avatar', !!url);
+    el.style.backgroundImage = url ? `url("${url}")` : '';
+  }
+
+  async function avatarUrl(path, seconds = 3600) {
+    if (!path || !sb) return null;
+    const { data, error } = await sb.storage.from('fisiolink-avatars').createSignedUrl(path, seconds);
+    return error ? null : data?.signedUrl || null;
+  }
+
   function switchAuth(mode) {
     $('#loginPanel').classList.toggle('hidden', mode !== 'login');
     $('#registerPanel').classList.toggle('hidden', mode !== 'register');
@@ -106,6 +158,7 @@
     if (name === 'meus-videos') loadMyVideos();
     if (name === 'agenda') loadAppointments();
     if (name === 'mensagens') loadContacts();
+    if (name === 'perfil') loadProfilePage();
   }
 
   function applyRoleUI() {
@@ -113,16 +166,17 @@
     $$('.patient-only').forEach(el => el.classList.toggle('hidden', !isPatient));
     $$('.therapist-only').forEach(el => el.classList.toggle('hidden', isPatient));
     $('#userBadge').textContent = profile?.name || 'Usuário';
-    $('#userInitials').textContent = initials(profile?.name);
+    setAvatarElement($('#userInitials'), profile?.name, profile?.avatar_url || null);
     $('#homeGreeting').textContent = `Olá, ${(profile?.name || 'Usuário').split(' ')[0]}!`;
     showPage('inicio');
   }
 
   async function loadProfile() {
     if (!session?.user) return;
-    const { data, error } = await sb.from('profiles').select('id,name,role').eq('id', session.user.id).single();
+    const { data, error } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
     if (error) throw error;
     profile = data;
+    profile.avatar_url = await avatarUrl(profile.avatar_path);
   }
 
   async function setLoggedInState() {
@@ -134,7 +188,7 @@
     $('#userMenuBtn').classList.remove('hidden');
     $('#notificationBtn').classList.remove('hidden');
     applyRoleUI();
-    await Promise.allSettled([loadVideos(), loadTherapists(), loadAppointments(), loadContacts(), loadProgress()]);
+    await Promise.allSettled([loadVideos(), loadTherapists(), loadAppointments(), loadContacts(), loadProgress(), loadProfilePage()]);
     setupRealtime();
     refreshHome();
   }
@@ -158,6 +212,7 @@
   }
 
   async function bootstrap() {
+    readPreferences();
     $('#todayChip').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
     currentCalendar = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     renderCalendar();
@@ -487,9 +542,14 @@
   async function loadContacts() {
     if (!sb || !session || !profile) return;
     const targetRole = profile.role === 'patient' ? 'therapist' : 'patient';
-    const { data, error } = await sb.from('profiles').select('id,name,role').eq('role', targetRole).neq('id', session.user.id).order('name');
+    let { data, error } = await sb.from('profiles').select('id,name,role,avatar_path,specialty,city').eq('role', targetRole).neq('id', session.user.id).order('name');
+    if (error) {
+      const fallback = await sb.from('profiles').select('id,name,role').eq('role', targetRole).neq('id', session.user.id).order('name');
+      data = fallback.data;
+      error = fallback.error;
+    }
     if (error) return;
-    contacts = data || [];
+    contacts = await Promise.all((data || []).map(async c => ({ ...c, avatar_url: await avatarUrl(c.avatar_path) })));
     $('#onlineCount').textContent = `${contacts.length} contato${contacts.length === 1 ? '' : 's'}`;
     renderContacts();
     if (selectedContact) {
@@ -500,7 +560,11 @@
   function renderContacts() {
     const q = ($('#contactSearch').value || '').trim().toLowerCase();
     const list = contacts.filter(c => c.name.toLowerCase().includes(q));
-    $('#contactsList').innerHTML = list.length ? list.map(c => `<button class="contact-item ${selectedContact?.id === c.id ? 'active' : ''}" data-contact-id="${c.id}"><div class="avatar">${initials(c.name)}</div><div class="contact-copy"><strong>${escapeHtml(c.name)}</strong><span>${c.role === 'therapist' ? 'Fisioterapeuta' : 'Paciente'} · disponível</span></div><span>›</span></button>`).join('') : '<div class="empty">Nenhum contato encontrado.</div>';
+    $('#contactsList').innerHTML = list.length ? list.map(c => {
+      const avatarStyle = c.avatar_url ? ` style="background-image:url('${c.avatar_url}')" data-has-avatar="1"` : '';
+      const subtitle = c.role === 'therapist' ? (c.specialty || 'Fisioterapeuta') : 'Paciente';
+      return `<button class="contact-item ${selectedContact?.id === c.id ? 'active' : ''}" data-contact-id="${c.id}"><div class="avatar ${c.avatar_url ? 'has-avatar' : ''}"${avatarStyle}>${c.avatar_url ? '' : initials(c.name)}</div><div class="contact-copy"><strong>${escapeHtml(c.name)}</strong><span>${escapeHtml(subtitle)} · disponível</span></div><span>›</span></button>`;
+    }).join('') : '<div class="empty">Nenhum contato encontrado.</div>';
   }
 
   async function selectContact(id) {
@@ -510,9 +574,9 @@
     renderContacts();
     $('#chatEmpty').classList.add('hidden');
     $('#chatActive').classList.remove('hidden');
-    $('#chatAvatar').textContent = initials(contact.name);
+    setAvatarElement($('#chatAvatar'), contact.name, contact.avatar_url);
     $('#chatName').textContent = contact.name;
-    $('#chatRole').textContent = contact.role === 'therapist' ? 'Fisioterapeuta' : 'Paciente';
+    $('#chatRole').textContent = contact.role === 'therapist' ? (contact.specialty || 'Fisioterapeuta') : 'Paciente';
     $('.messages-shell').classList.add('chat-open');
     await loadMessages();
   }
@@ -542,7 +606,9 @@
       } else {
         content = `<p>${escapeHtml(m.body || '')}</p>`;
       }
-      return `<div class="msg-row ${mine ? 'mine' : 'theirs'}"><div class="msg-avatar">${mine ? initials(profile.name) : initials(selectedContact?.name)}</div><div class="msg-bubble">${content}<div class="msg-meta"><span>${formatTime(m.created_at)}</span>${mine ? '<span>✓✓</span>' : ''}</div></div></div>`;
+      const person = mine ? profile : selectedContact;
+      const avatarStyle = person?.avatar_url ? ` style="background-image:url('${person.avatar_url}')"` : '';
+      return `<div class="msg-row ${mine ? 'mine' : 'theirs'}"><div class="msg-avatar ${person?.avatar_url ? 'has-avatar' : ''}"${avatarStyle}>${person?.avatar_url ? '' : initials(person?.name)}</div><div class="msg-bubble">${content}<div class="msg-meta"><span>${formatTime(m.created_at)}</span>${mine ? '<span>✓✓</span>' : ''}</div></div></div>`;
     }));
     const list = $('#messagesList');
     list.innerHTML = html.join('') || '<div class="empty">Comece a conversa por aqui.</div>';
@@ -630,7 +696,7 @@
         const m = payload.new;
         if (![m.sender_id, m.receiver_id].includes(session.user.id)) return;
         if (selectedContact && [m.sender_id, m.receiver_id].includes(selectedContact.id)) loadMessages();
-        if (m.sender_id !== session.user.id) {
+        if (m.sender_id !== session.user.id && localPreferences.messageAlerts) {
           $('#notificationDot').classList.remove('hidden');
           if (document.visibilityState !== 'visible') toast('Você recebeu uma nova mensagem.');
         }
@@ -661,7 +727,7 @@
     const otherId = row.caller_id === session.user.id ? row.callee_id : row.caller_id;
     const other = contacts.find(c => c.id === otherId) || (selectedContact?.id === otherId ? selectedContact : null);
     $('#callName').textContent = other?.name || 'Contato';
-    $('#callAvatar').textContent = initials(other?.name || 'FL');
+    setAvatarElement($('#callAvatar'), other?.name || 'FL', other?.avatar_url || null);
     $('#callTypeLabel').textContent = row.call_type === 'video' ? 'Chamada de vídeo' : 'Ligação de voz';
     $('#videoStage').classList.toggle('hidden', row.call_type !== 'video');
     $('#toggleCameraBtn').classList.toggle('hidden', row.call_type !== 'video');
@@ -890,6 +956,151 @@
   }
 
   // ---------------------- Auth ----------------------
+
+  // ---------------------- Perfil, conta e preferências ----------------------
+  function profileCompletion() {
+    if (!profile) return 0;
+    const common = [profile.name, profile.phone, profile.city, profile.bio, profile.avatar_path];
+    const professional = profile.role === 'therapist' ? [profile.specialty, profile.crefito, profile.clinic] : [];
+    const all = [...common, ...professional];
+    const filled = all.filter(v => String(v || '').trim()).length;
+    return all.length ? Math.round((filled / all.length) * 100) : 0;
+  }
+
+  async function loadProfileStats() {
+    if (!sb || !session || !profile) return;
+    const uid = session.user.id;
+    let stat1 = 0, stat2 = 0, stat3 = 0;
+
+    try {
+      if (profile.role === 'patient') {
+        const [{ count: progressCount }, { count: appointmentCount }, { count: messageCount }] = await Promise.all([
+          sb.from('progress').select('id', { count: 'exact', head: true }).eq('patient_id', uid).eq('completed', true),
+          sb.from('appointments').select('id', { count: 'exact', head: true }).or(`patient_id.eq.${uid},therapist_id.eq.${uid}`),
+          sb.from('messages').select('id', { count: 'exact', head: true }).or(`sender_id.eq.${uid},receiver_id.eq.${uid}`)
+        ]);
+        stat1 = progressCount || 0;
+        stat2 = appointmentCount || 0;
+        stat3 = messageCount || 0;
+        $('#profileStat1Label').textContent = 'Exercícios concluídos';
+        $('#profileStat2Label').textContent = 'Sessões';
+        $('#profileStat3Label').textContent = 'Mensagens';
+      } else {
+        const [{ count: videoCount }, { count: appointmentCount }, { count: messageCount }] = await Promise.all([
+          sb.from('videos').select('id', { count: 'exact', head: true }).eq('therapist_id', uid),
+          sb.from('appointments').select('id', { count: 'exact', head: true }).or(`patient_id.eq.${uid},therapist_id.eq.${uid}`),
+          sb.from('messages').select('id', { count: 'exact', head: true }).or(`sender_id.eq.${uid},receiver_id.eq.${uid}`)
+        ]);
+        stat1 = videoCount || 0;
+        stat2 = appointmentCount || 0;
+        stat3 = messageCount || 0;
+        $('#profileStat1Label').textContent = 'Vídeos publicados';
+        $('#profileStat2Label').textContent = 'Sessões';
+        $('#profileStat3Label').textContent = 'Mensagens';
+      }
+    } catch (e) {
+      console.warn('Resumo do perfil indisponível', e);
+    }
+
+    $('#profileStat1').textContent = stat1;
+    $('#profileStat2').textContent = stat2;
+    $('#profileStat3').textContent = stat3;
+  }
+
+  async function loadProfilePage() {
+    if (!profile || !session) return;
+    setAvatarElement($('#profileAvatar'), profile.name, profile.avatar_url);
+    $('#profileDisplayName').textContent = profile.name || 'Usuário FisioLink';
+    $('#profileRoleBadge').textContent = profile.role === 'therapist' ? 'Fisioterapeuta' : 'Paciente';
+    $('#profileEmail').value = session.user.email || '';
+    $('#profileName').value = profile.name || '';
+    $('#profilePhone').value = profile.phone || '';
+    $('#profileCity').value = profile.city || '';
+    $('#profileBio').value = profile.bio || '';
+    $('#profileSpecialty').value = profile.specialty || '';
+    $('#profileCrefito').value = profile.crefito || '';
+    $('#profileClinic').value = profile.clinic || '';
+    const created = profile.created_at ? new Date(profile.created_at) : null;
+    $('#profileMemberSince').textContent = created && !Number.isNaN(created.getTime())
+      ? `Membro desde ${created.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`
+      : 'Conta FisioLink';
+    const pct = profileCompletion();
+    $('#profileCompletionLabel').textContent = `${pct}%`;
+    $('#profileCompletionBar').style.width = `${pct}%`;
+    applyPreferences();
+    await loadProfileStats();
+  }
+
+  async function saveProfile(e) {
+    e.preventDefault();
+    if (!sb || !session || !profile) return;
+    const payload = {
+      name: $('#profileName').value.trim(),
+      phone: $('#profilePhone').value.trim(),
+      city: $('#profileCity').value.trim(),
+      bio: $('#profileBio').value.trim(),
+      specialty: profile.role === 'therapist' ? $('#profileSpecialty').value.trim() : null,
+      crefito: profile.role === 'therapist' ? $('#profileCrefito').value.trim() : null,
+      clinic: profile.role === 'therapist' ? $('#profileClinic').value.trim() : null,
+      updated_at: new Date().toISOString()
+    };
+    if (!payload.name) return toast('Informe seu nome.', true);
+    $('#profileSaveStatus').textContent = 'Salvando...';
+    const { data, error } = await sb.from('profiles').update(payload).eq('id', session.user.id).select('*').single();
+    if (error) {
+      $('#profileSaveStatus').textContent = '';
+      return toast('Não foi possível salvar. Execute a atualização SQL de perfil no Supabase.', true);
+    }
+    profile = { ...profile, ...data };
+    profile.avatar_url = await avatarUrl(profile.avatar_path);
+    $('#profileSaveStatus').textContent = 'Alterações salvas ✓';
+    setTimeout(() => { if ($('#profileSaveStatus')) $('#profileSaveStatus').textContent = ''; }, 2600);
+    $('#userBadge').textContent = profile.name;
+    setAvatarElement($('#userInitials'), profile.name, profile.avatar_url);
+    $('#homeGreeting').textContent = `Olá, ${(profile.name || 'Usuário').split(' ')[0]}!`;
+    await loadProfilePage();
+    await loadContacts();
+    toast('Perfil atualizado.');
+  }
+
+  async function uploadProfileAvatar(file) {
+    if (!file || !sb || !session || !profile) return;
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) return toast('Use uma imagem JPG, PNG ou WebP.', true);
+    if (file.size > 5 * 1024 * 1024) return toast('A foto deve ter no máximo 5 MB.', true);
+
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = `${session.user.id}/avatar-${Date.now()}.${ext}`;
+    toast('Enviando foto...');
+    const { error: uploadError } = await sb.storage.from('fisiolink-avatars').upload(path, file, { contentType: file.type, upsert: false });
+    if (uploadError) return toast('Não foi possível enviar a foto. Execute a atualização SQL de perfil.', true);
+
+    const oldPath = profile.avatar_path;
+    const { data, error } = await sb.from('profiles').update({ avatar_path: path, updated_at: new Date().toISOString() }).eq('id', session.user.id).select('*').single();
+    if (error) {
+      await sb.storage.from('fisiolink-avatars').remove([path]);
+      return toast('Não foi possível associar a foto ao perfil.', true);
+    }
+
+    profile = { ...profile, ...data };
+    profile.avatar_url = await avatarUrl(path);
+    if (oldPath && oldPath !== path) await sb.storage.from('fisiolink-avatars').remove([oldPath]);
+    setAvatarElement($('#profileAvatar'), profile.name, profile.avatar_url);
+    setAvatarElement($('#userInitials'), profile.name, profile.avatar_url);
+    await loadProfilePage();
+    toast('Foto de perfil atualizada.');
+  }
+
+  function bindPreference(id, key) {
+    const el = $(`#${id}`);
+    if (!el) return;
+    el.onchange = () => {
+      localPreferences[key] = el.checked;
+      savePreferences();
+      toast('Preferência atualizada.');
+    };
+  }
+
   async function login(e) {
     e.preventDefault();
     if (!configured) return toast('O Supabase ainda não está configurado.', true);
@@ -932,6 +1143,29 @@
   $('#logoutBtn').onclick = async () => { if (sb) await sb.auth.signOut(); };
   $('#brandBtn').onclick = () => session ? showPage('inicio') : window.scrollTo({ top: 0, behavior: 'smooth' });
   $('#notificationBtn').onclick = () => { $('#notificationDot').classList.add('hidden'); showPage('mensagens'); };
+  $('#userMenuBtn').onclick = () => showPage('perfil');
+  $('#profileForm').onsubmit = saveProfile;
+  $('#changeAvatarBtn').onclick = () => $('#profileAvatarInput').click();
+  $('#profileAvatarInput').onchange = async e => {
+    const file = e.target.files?.[0];
+    if (file) await uploadProfileAvatar(file);
+    e.target.value = '';
+  };
+  $('#copyUserIdBtn').onclick = async () => {
+    if (!session?.user?.id) return;
+    try {
+      await navigator.clipboard.writeText(session.user.id);
+      toast('ID da conta copiado.');
+    } catch (_) {
+      toast(`ID: ${session.user.id}`);
+    }
+  };
+  $('#profileLogoutBtn').onclick = async () => { if (sb) await sb.auth.signOut(); };
+  bindPreference('prefLargeText', 'largeText');
+  bindPreference('prefHighContrast', 'highContrast');
+  bindPreference('prefReducedMotion', 'reducedMotion');
+  bindPreference('prefMessageAlerts', 'messageAlerts');
+  bindPreference('prefAppointmentAlerts', 'appointmentAlerts');
 
   $$('.nav-btn').forEach(b => b.onclick = () => showPage(b.dataset.page));
   $$('#mobileNav button').forEach(b => b.onclick = () => showPage(b.dataset.page));

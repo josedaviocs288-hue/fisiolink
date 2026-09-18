@@ -1,36 +1,26 @@
-FISIOLINK — PACOTE DE ATUALIZAÇÃO
+FISIOLINK — ATUALIZAÇÃO DE PERFIL E COMPLEMENTOS
 
-Este ZIP foi feito para o site que JÁ ESTÁ hospedado.
-Não precisa criar outro repositório nem configurar o GitHub Pages novamente.
+Esta pasta foi feita para SUBSTITUIR/ATUALIZAR os arquivos do projeto FisioLink que já está hospedado.
+Não é necessário criar outro repositório ou hospedar tudo novamente.
 
-IMPORTANTE:
-- O ZIP NÃO contém config.js de propósito. Assim, sua URL e sua chave do Supabase já configuradas não são apagadas.
-- O ZIP também não altera suas tabelas antigas de vídeos/progresso.
+O QUE FOI ADICIONADO
+- Nova tela completa de Perfil.
+- Foto de perfil com upload real no Supabase Storage.
+- Nome, telefone, cidade e biografia editáveis.
+- Campos profissionais para fisioterapeutas: especialidade, CREFITO e clínica/local de atendimento.
+- Resumo da conta com exercícios/vídeos, sessões e mensagens.
+- Indicador de preenchimento do perfil.
+- Atalhos para mensagens, agenda, ID da conta e sair.
+- Preferências de acessibilidade: texto maior, alto contraste e redução de animações.
+- Preferências de avisos para mensagens e agenda.
+- Fotos de perfil também aparecem na navegação e nas conversas quando disponíveis.
+- Interface responsiva revisada para celular e computador.
 
-1) SUBSTITUA/ADICIONE NO REPOSITÓRIO EXISTENTE:
-   index.html
-   estilos.css
-   script.js
-   logo-fisiolink.png
+IMPORTANTE
+1) NÃO substitua seu config.js já configurado. Este pacote não inclui config.js.
+2) Depois de enviar os arquivos para o GitHub, execute no Supabase:
+   ATUALIZACAO-PERFIL-SUPABASE.sql
+3) Se você ainda não executou o SQL anterior de mensagens/agenda/chamadas, execute também:
    ATUALIZACAO-SUPABASE.sql
 
-2) NO SUPABASE, rode uma vez:
-   SQL Editor > New query > cole TODO o conteúdo de ATUALIZACAO-SUPABASE.sql > Run
-
-Isso cria somente as novas funções:
-- mensagens em tempo real
-- envio de arquivo
-- mensagem de voz
-- agenda de sessões
-- ligação de voz pelo navegador
-- chamada de vídeo pelo navegador
-
-3) DEPOIS ATUALIZE O GITHUB NORMALMENTE:
-   git add .
-   git commit -m "Atualiza interface e comunicacao do FisioLink"
-   git push origin main
-
-O GitHub Pages que já está ativo atualizará o site automaticamente.
-
-OBSERVAÇÃO SOBRE CHAMADAS:
-As chamadas usam WebRTC e precisam de HTTPS (GitHub Pages já fornece) e permissão de microfone/câmera no navegador. Em algumas redes muito restritas, chamadas P2P podem exigir um servidor TURN para máxima compatibilidade; para apresentação e redes comuns, o STUN configurado no projeto costuma funcionar.
+A atualização não apaga vídeos, usuários, progresso, mensagens ou agenda existentes.
