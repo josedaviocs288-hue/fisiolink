@@ -23,3 +23,26 @@ body.a11y-large{font-size:17px}.a11y-large .nav-btn,.a11y-large .mobile-nav butt
 @media(max-width:1080px){.profile-layout{grid-template-columns:250px minmax(0,1fr)}.account-action-grid{grid-template-columns:1fr}.profile-sidebar{position:static}}
 @media(max-width:820px){.profile-layout{grid-template-columns:1fr}.profile-sidebar{grid-template-columns:1fr 1fr}.profile-identity-card{padding:22px}.profile-mini-card{align-self:stretch}.mobile-nav{overflow-x:auto;justify-content:flex-start}.mobile-nav button{flex:1 0 56px}.profile-health-badge{width:100%}}
 @media(max-width:580px){.profile-sidebar{grid-template-columns:1fr}.profile-page-head{align-items:flex-start}.profile-stats{grid-template-columns:repeat(3,1fr)}.profile-stats article{padding:13px}.profile-stats strong{font-size:1.35rem}.profile-stats small{font-size:.68rem}.profile-section-title{align-items:flex-start;flex-direction:column}.profile-form,.preferences-panel,.account-actions-panel{padding:18px}.account-action-grid{grid-template-columns:1fr}.setting-row{gap:12px}.setting-row span{font-size:.74rem}}
+
+/* ===== FIX CHAT 2026-09-18 =====
+   Mantém o campo de mensagem sempre visível mesmo com muitas mensagens. */
+.messages-shell{min-height:0}
+.chat-panel{min-height:0;overflow:hidden}
+.chat-active{
+  min-height:0;
+  overflow:hidden;
+  grid-template-rows:auto minmax(0,1fr) auto auto;
+}
+.messages-list{
+  min-height:0;
+  overscroll-behavior:contain;
+  scrollbar-gutter:stable;
+}
+.quick-actions,.message-composer{flex:0 0 auto}
+.message-composer{position:relative;z-index:4}
+.message-composer textarea{min-width:0;width:100%}
+
+@media(max-width:820px){
+  .chat-panel,.chat-active{height:100%;min-height:0}
+  .messages-list{min-height:0}
+}

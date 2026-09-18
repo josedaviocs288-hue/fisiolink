@@ -616,18 +616,51 @@
   }
 
   async function sendTextMessage(e) {
-    e.preventDefault();
-    if (!selectedContact) return;
+    e?.preventDefault?.();
+    if (!selectedContact) return toast('Escolha um contato primeiro.', true);
+    if (!sb || !session?.user?.id) return toast('Sua sessão expirou. Entre novamente.', true);
+
     const input = $('#messageInput');
+    const form = $('#messageForm');
+    const sendBtn = form?.querySelector('.send-btn');
     const body = input.value.trim();
     if (!body) return;
-    input.value = '';
-    const { error } = await sb.from('messages').insert({ sender_id: session.user.id, receiver_id: selectedContact.id, body, message_type: 'text' });
-    if (error) {
-      input.value = body;
-      return toast('Não foi possível enviar. Rode a atualização SQL do chat.', true);
+
+    if (sendBtn?.disabled) return;
+    if (sendBtn) {
+      sendBtn.disabled = true;
+      sendBtn.setAttribute('aria-busy', 'true');
     }
-    await loadMessages();
+
+    input.value = '';
+    input.style.height = 'auto';
+
+    try {
+      const { error } = await sb.from('messages').insert({
+        sender_id: session.user.id,
+        receiver_id: selectedContact.id,
+        body,
+        message_type: 'text'
+      });
+
+      if (error) {
+        input.value = body;
+        input.focus();
+        return toast(`Não foi possível enviar: ${error.message}`, true);
+      }
+
+      await loadMessages();
+      input.focus();
+    } catch (err) {
+      input.value = body;
+      input.focus();
+      toast(`Não foi possível enviar: ${err?.message || err}`, true);
+    } finally {
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.removeAttribute('aria-busy');
+      }
+    }
   }
 
   async function sendAttachment(file, type = 'file') {
@@ -1224,6 +1257,14 @@
   $('#messageInput').addEventListener('input', e => {
     e.target.style.height = 'auto';
     e.target.style.height = `${Math.min(e.target.scrollHeight, 110)}px`;
+  });
+
+  // Enter envia a mensagem; Shift+Enter cria uma nova linha.
+  $('#messageInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      $('#messageForm').requestSubmit();
+    }
   });
 
   $('#voiceCallBtn').onclick = () => startCall('voice');
